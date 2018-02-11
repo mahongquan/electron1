@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "2017": "^1.0.1",
-    "electron-rebuild": "^1.7.3"
+    "electron-rebuild": "^1.7.3",
+    "sequelize": "^4.33.3"
   }
 }
