@@ -1,19 +1,39 @@
 var sqlite3 = require('sqlite3').verbose();
-var db = new sqlite3.Database(':memory:');
+var db = new sqlite3.Database('data.sqlite');
+var socket={
+  emit:function(url,data,callback){
+    console.log(url);
+    console.log(data);
+    if (url=="/get/Contact"){
+	    db.all("SELECT * FROM parts_contact", function(err, row) {
+	         var res={};
+	         res.error=err;
+	         res.data=row;
+	         callback(res);
+	    });
+	}
+	else if (url=="/get/Item"){
+	    db.all("SELECT * FROM parts_item", function(err, row) {
+	         var res={};
+	         res.error=err;
+	         res.data=row;
+	         callback(res);
+	    });
+	}
 
+  }
+};
 db.serialize(function() {
-    db.run("CREATE TABLE lorem (info TEXT)");
 
-      var stmt = db.prepare("INSERT INTO lorem VALUES (?)");
-        for (var i = 0; i < 10; i++) {
-                stmt.run("Ipsum " + i);
-                  }
-          stmt.finalize();
-
-            //db.each("SELECT rowid AS id, info FROM lorem", function(err, row) {
-                    //console.log(row.id + ": " + row.info);
-                      //});
+    // db.all("SELECT * FROM parts_item", function(err, row) {
+    //         console.log(row);
+    // });
+ //    socket.emit("/get/Contact",{},(res)=>{
+	// 	console.log(res);
+	// });
+	socket.emit("/get/Item",{},(res)=>{
+		console.log(res);
+	});
 });
 
-//db.close();
 
