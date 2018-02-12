@@ -1,12 +1,4 @@
-console.log("load");
-var sqlite3 = require('sqlite3').verbose();
-var db = new sqlite3.Database('data.sqlite');
-var socket={
-  emit:function(url,data,callback){
-    console.log(url);
-    console.log(data);
-  }
-};
+
 var {Table,Modal,Navbar,Nav,NavItem,DropdownButton,MenuItem}=ReactBootstrap;
 var update=newContext();
 var DateTime=Datetime;
@@ -1067,10 +1059,10 @@ class PackItems extends React.Component {
     const itemRows = items.map((item, idx) => (
       <tr key={idx}>
         <td >{item.id}</td>
-        <td >{item.Item.name}</td>
-        <td>{item.Item.guige}</td>
+        <td >{item.name}</td>
+        <td>{item.guige}</td>
         <td>{item.ct}</td>
-        <td>{item.Item.bh}</td>
+        <td>{item.bh}</td>
         <td  hidden={this.state.release}>{item.pack}</td>
         <td><input type="checkbox" disabled="disabled" name="quehuo" checked={item.quehuo}  /></td>
         <td>
@@ -1188,10 +1180,7 @@ class UsePackEditNew extends React.Component{
   render=()=>{
     let name;
     let id;
-    if (this.state.usepack.Pack){
-      name=this.state.usepack.Pack.name
-      id=this.state.usepack.Pack.id
-    }
+    id=this.state.usepack.pack_id
     return (
         <Modal show={this.state.showModal} onHide={this.close}  dialogClassName="custom-modal">
           <Modal.Header closeButton>
@@ -1579,7 +1568,7 @@ class UsePacks2 extends React.Component {
         key={idx}
       >
         <td >{usepack.id}</td>
-        <td >{usepack.Pack.name}</td>
+        <td >{usepack.name}</td>
         <td hidden={this.state.release}>{usepack.contact}</td>
         <td hidden={this.state.release} >{usepack.pack}</td>
         <td hidden={this.state.release} >{usepack.hetongbh}</td>
@@ -2251,6 +2240,9 @@ class ContactEdit2New  extends React.Component{
     }
     else{
       this.old=this.parent.state.contacts[this.index];
+      if(!this.old.addr){this.old.addr=""}
+      if(!this.old.channels){this.old.channels=""}
+      if(!this.old.yiqixinghao){this.old.yiqixinghao=""}
       this.setState({hiddenPacks:false});
     }
     this.setState({contact:this.old});
@@ -2915,7 +2907,7 @@ class App extends React.Component {
     );
   }
 }
-db.serialize(function() {
+//db.serialize(function() {
   ReactDOM.render(<App />, document.getElementById('app'));
-});
+//});
 
