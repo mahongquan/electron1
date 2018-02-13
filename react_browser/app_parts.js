@@ -5,6 +5,9 @@ var socket={
   emit:function(url,data,callback){
     console.log(url);
     console.log(data);
+    if(url=="/get/Contact"){
+      
+    }
   }
 };
 var {Table,Modal,Navbar,Nav,NavItem,DropdownButton,MenuItem}=ReactBootstrap;
