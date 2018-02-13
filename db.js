@@ -15,6 +15,7 @@ var socket={
   emit:function(url,data,callback){
     console.log(url);
     console.log(data);
+    if(!data){data={};}
     if (data.limit)
             ;
     else
@@ -202,9 +203,9 @@ var socket={
     // socket.emit("/delete/UsePack",{id:1082},(res)=>{
     //   console.log(res);
     // });
-    socket.emit("/get/month12",{contact_id:1},(res)=>{
-      console.log(res);
-    });
+    // socket.emit("/get/month12",{contact_id:1},(res)=>{
+    //   console.log(res);
+    // });
 //});
 
 

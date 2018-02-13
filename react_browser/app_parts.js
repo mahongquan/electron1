@@ -4,6 +4,24 @@ var update=newContext();
 var DateTime=Datetime;
 var host="";
 //var socket=io();
+const electron = require("electron");
+console.log("here-------------------------------------")
+console.log(electron)
+const dialog = electron.dialog;
+console.log(dialog);
+var openDialog = function(defaultpath,callback){
+    dialog.showOpenDialog({
+        defaultPath :defaultpath,
+        properties: [
+            'openFile',
+        ],
+        filters: [
+            { name: 'zby', extensions: ['json'] },
+        ]
+    },function(res){
+        callback(res[0]) //我这个是打开单个文件的
+    })
+}
 var isEqual=_.isEqual;// from 'lodash/isEqual';
 var find=_.find;// import find from 'lodash/find';
 //var {ContextMenuTrigger,ContextMenu}=ReactContextMenu;
@@ -1674,6 +1692,11 @@ class DlgImport extends React.Component{
           console.log(result.data);
    })
   }
+  openfile=()=>{
+    openDialog(".",(res)=>{
+        console.log(res);
+    });
+  }
   render=()=>{
     const contactRows = this.state.packs.map((pack, idx) => (
       <tr key={idx} >
@@ -1690,6 +1713,7 @@ class DlgImport extends React.Component{
           <form  ref="form1" encType="multipart/form-data">
           <input style={{margin:"10px 10px 10px 10px"}} id="file"  accept="application/vnd.ms-excel" type="file" name="file" ref={(ref) => this.fileUpload = ref}/>
           <button  style={{margin:"10px 10px 10px 10px"}} className="btn btn-primary" onClick={this.upload} type="button">上传</button>
+          <button  style={{margin:"10px 10px 10px 10px"}} className="btn btn-primary" onClick={this.openfile} type="button">打开文件</button>
           </form>
           <div style={{"minHeight":"200px"}}>
           <table  className="table-bordered"><thead><tr><td>ID</td><td>名称</td></tr></thead><tbody>
@@ -3103,8 +3127,8 @@ class App extends React.Component {
          <button className="btn btn-primary" onClick={()=>this.handleEdit(null)}>新仪器</button>
     </td>
      <td>
-          <DlgImport/>
-    </td>
+   <button className="btn btn-info" onClick={this.openDlgImport}>导入标样</button>
+  </td>
     <td>过滤:
     <DropdownButton title={this.state.baoxiang} id="id_dropdown2">
       <MenuItem onSelect={() => this.onSelectBaoxiang("马红权")}>马红权</MenuItem>
