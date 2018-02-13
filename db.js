@@ -8,7 +8,7 @@ var socket={
     if (data.limit)
             ;
     else
-        data.limit=100
+        data.limit=1000
     if (data.start)
         ;
     else
@@ -17,27 +17,42 @@ var socket={
     	var where=" where 2>1"
     	if (data.baoxiang)
     		where+=" and  baoxiang like '%"+data.baoxiang+"%'";
-        db.all("SELECT * FROM parts_contact"+where+" limit "+data.limit+" offset "+data.start, function(err, row) {
-             var res={};
-             res.error=err;
-             res.data=row;
-             callback(res);
+        db.serialize(function(){
+            var res={};
+            db.all("SELECT count(*) as total FROM parts_contact"+where, function(err, row) {
+                res.total=row[0].total;
+            });
+            db.all("SELECT * FROM parts_contact"+where+" ORDER BY yujifahuo_date DESC limit "+data.limit+" offset "+data.start, function(err, row) {
+                 res.error=err;
+                 res.data=row;
+                 callback(res);
+            });
         });
     }
     else if (url=="/get/Pack"){
-        db.all("SELECT * FROM parts_pack where name like '%"+data.search+"%' limit "+data.limit+" offset "+data.start, function(err, row) {
-             var res={};
-             res.error=err;
-             res.data=row;
-             callback(res);
+        db.serialize(function(){
+            var res={};
+            db.all("SELECT count(*) as total FROM parts_pack where name like '%"+data.search+"%'", function(err, row) {
+                res.total=row[0].total;
+            });
+            db.all("SELECT * FROM parts_pack where name like '%"+data.search+"%' limit "+data.limit+" offset "+data.start, function(err, row) {
+                 res.error=err;
+                 res.data=row;
+                 callback(res);
+            });
         });
     }
     else if (url=="/get/Item"){
-        db.all("SELECT * FROM parts_item where name like '%"+data.search+"%' limit "+data.limit+" offset "+data.start, function(err, row) {
-             var res={};
-             res.error=err;
-             res.data=row;
-             callback(res);
+        db.serialize(function(){
+            var res={};
+            db.all("SELECT count(*) as total FROM parts_item where name like '%"+data.search+"%'", function(err, row) {
+                res.total=row[0].total;
+            });
+            db.all("SELECT * FROM parts_item where name like '%"+data.search+"%' limit "+data.limit+" offset "+data.start, function(err, row) {
+                    res.error=err;
+                 res.data=row;
+                 callback(res);
+            });
         });
     }
     else if (url=="/get/UsePack"){
