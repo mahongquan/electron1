@@ -12,6 +12,9 @@ function myDateStr(date) {
     return year + "-" + s_month + "-" + s_day ;
 }
 var socket={
+  importstandard:function(res){
+    console.log(res);
+  },
   emit:function(url,data,callback){
     console.log(url);
     console.log(data);

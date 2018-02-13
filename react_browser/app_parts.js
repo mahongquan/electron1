@@ -4,11 +4,10 @@ var update=newContext();
 var DateTime=Datetime;
 var host="";
 //var socket=io();
-const electron = require("electron");
-console.log("here-------------------------------------")
-console.log(electron)
-const dialog = electron.dialog;
-console.log(dialog);
+var app = require('electron').remote; 
+var dialog = app.dialog;
+
+// Or with ECMAScript 6
 var openDialog = function(defaultpath,callback){
     dialog.showOpenDialog({
         defaultPath :defaultpath,
@@ -16,7 +15,7 @@ var openDialog = function(defaultpath,callback){
             'openFile',
         ],
         filters: [
-            { name: 'zby', extensions: ['json'] },
+            { name: '*.xls', extensions: ['xls'] },
         ]
     },function(res){
         callback(res[0]) //我这个是打开单个文件的
@@ -1694,7 +1693,7 @@ class DlgImport extends React.Component{
   }
   openfile=()=>{
     openDialog(".",(res)=>{
-        console.log(res);
+        socket.importstandard(res);
     });
   }
   render=()=>{
@@ -1710,11 +1709,11 @@ class DlgImport extends React.Component{
             <Modal.Title>导入标样</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-          <form  ref="form1" encType="multipart/form-data">
+          <form  style={{display:"none"}} ref="form1" encType="multipart/form-data">
           <input style={{margin:"10px 10px 10px 10px"}} id="file"  accept="application/vnd.ms-excel" type="file" name="file" ref={(ref) => this.fileUpload = ref}/>
           <button  style={{margin:"10px 10px 10px 10px"}} className="btn btn-primary" onClick={this.upload} type="button">上传</button>
-          <button  style={{margin:"10px 10px 10px 10px"}} className="btn btn-primary" onClick={this.openfile} type="button">打开文件</button>
           </form>
+          <button  style={{margin:"10px 10px 10px 10px"}} className="btn btn-primary" onClick={this.openfile} type="button">打开文件</button>
           <div style={{"minHeight":"200px"}}>
           <table  className="table-bordered"><thead><tr><td>ID</td><td>名称</td></tr></thead><tbody>
           {contactRows}
@@ -2943,12 +2942,7 @@ class App extends React.Component {
     this.setState({start_input:e.target.value});
   };
 
-  onDetailClick=(contactid)=>{
-    console.log(contactid);
-    socket.emit("/parts/showcontact",{id:contactid},(data)=>{
-        console.log(data);
-    });
-  }
+
   handleNext = (e) => {
     this.mystate.start=this.mystate.start+this.mystate.limit;
     if(this.mystate.start>this.mystate.total-this.mystate.limit) 
@@ -3023,6 +3017,28 @@ class App extends React.Component {
   openDlgImportHT=()=>{
     this.refs.dlgimportHT.open();
   }
+  onDetailClick=(contactid)=>{
+        const BrowserWindow = require('electron').remote.BrowserWindow
+        const path = require('path')
+        const modalPath = path.join('file://', __dirname, '../t_装箱单.htm')
+        let win = new BrowserWindow({ width: 800, height: 600 })
+        win.on('close', function () { win = null })
+        console.log(modalPath);
+        win.loadURL(modalPath)
+        win.show()
+  }
+//   const BrowserWindow = require('electron').remote.BrowserWindow
+// const path = require('path')
+
+// const newWindowBtn = document.getElementById('new-window')
+
+// newWindowBtn.addEventListener('click', function (event) {
+//   const modalPath = path.join('file://', __dirname, '../../sections/windows/modal.html')
+//   let win = new BrowserWindow({ width: 400, height: 320 })
+//   win.on('close', function () { win = null })
+//   win.loadURL(modalPath)
+//   win.show()
+// })
   render() {
     console.log("render=========================");
     const contactRows = this.state.contacts.map((contact, idx) => (
