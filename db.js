@@ -1,6 +1,16 @@
 console.log("load");
 var sqlite3 = require('sqlite3').verbose();
 var db = new sqlite3.Database('data.sqlite');
+function myDateStr(date) {
+    var year = date.getFullYear();
+    var month = date.getMonth() + 1;
+    var s_month=""+month;
+    if (s_month.length<2) s_month="0"+s_month;
+    var day = date.getDate();
+    var s_day=""+day;
+    if (s_day.length<2) s_day="0"+s_day;
+    return year + "-" + s_month + "-" + s_day ;
+}
 var socket={
   emit:function(url,data,callback){
     console.log(url);
@@ -141,9 +151,37 @@ var socket={
              console.log(res);
              callback(res);
         });
-    }
-  }
-};
+    }///get/month12
+    else if (url=="/get/month12"){//todo
+        console.log(data);
+        var baoxiang=data.baoxiang
+        var end_date=new Date()
+        var start_date=new Date(end_date.getFullYear()-1,1,1);
+        var start_date_s=myDateStr(start_date)
+        var end_date_s=myDateStr(end_date)
+        let cmd;
+        if (!baoxiang)
+            cmd="select strftime('%Y-%m',tiaoshi_date) as month,count(id) as total from parts_contact  where tiaoshi_date between '"+start_date_s+"' and '"+end_date_s+"' group by month"
+        else
+            cmd="select strftime('%Y-%m',tiaoshi_date) as month,count(id) as total from parts_contact  where baoxiang like '"+baoxiang+"'  and tiaoshi_date between '"+start_date_s+"' and '"+end_date_s+"' group by month"            
+        console.info(cmd)
+        db.all(cmd,function(err,row){
+            console.log(row);
+            var lbls=[]
+            var values=[]
+            for(var i  in row){
+                console.log(i);
+                var one=row[i]
+                console.log(one)
+                lbls.push(one.month+"月")
+                values.push(one.total)
+            }
+            var res={"success":true, "lbls":lbls,"values":values}
+            callback(res);
+        })    //执行sql语句
+    }//if
+  }//function;
+};//socket
 //db.serialize(function() {
 
     // db.all("SELECT * FROM parts_item", function(err, row) {
@@ -161,10 +199,10 @@ var socket={
     // socket.emit("/post/UsePack",{pack_id:82,contact_id:1},(res)=>{
     //   console.log(res);
     // });
-    socket.emit("/delete/UsePack",{id:1082},(res)=>{
-      console.log(res);
-    });
-    socket.emit("/get/UsePack",{contact_id:1},(res)=>{
+    // socket.emit("/delete/UsePack",{id:1082},(res)=>{
+    //   console.log(res);
+    // });
+    socket.emit("/get/month12",{contact_id:1},(res)=>{
       console.log(res);
     });
 //});
