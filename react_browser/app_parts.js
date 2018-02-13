@@ -2996,7 +2996,8 @@ class App extends React.Component {
     this.refs.dlgitems.open();
   }
   opendlgfolder=(contactid)=>{
-   this.refs.dlgfolder.open(contactid); 
+     //this.refs.dlgfolder.open(contactid); 
+     socket.emit("/folder",{yiqibh:contactid},()=>{});
   }
   opendlgcheck=(contactid,yiqibh)=>{
    this.refs.dlgcheck.open(contactid,yiqibh); 
@@ -3054,7 +3055,7 @@ class App extends React.Component {
             <MenuItem onSelect={()=>this.opendlgurl("/rest/updateMethod",this,idx,{id:contact.id})}>更新方法</MenuItem>
             <MenuItem onSelect={()=>this.opendlgwait(contact.id)}>全部文件</MenuItem>
             <MenuItem onSelect={()=>this.opendlgcheck(contact.id,contact.yiqibh)}>核对备料计划</MenuItem>
-            <MenuItem onSelect={()=>this.opendlgfolder(contact.id)}>资料文件夹</MenuItem>
+            <MenuItem onSelect={()=>this.opendlgfolder(contact.yiqibh)}>资料文件夹</MenuItem>
             
           </DropdownButton>
         </td>

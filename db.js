@@ -1,6 +1,9 @@
 console.log("load");
 var sqlite3 = require('sqlite3').verbose();
 var db = new sqlite3.Database('data.sqlite');
+const path = require('path')
+const {shell} = require('electron');
+const fs = require('fs');
 function myDateStr(date) {
     var year = date.getFullYear();
     var month = date.getMonth() + 1;
@@ -27,7 +30,20 @@ var socket={
         ;
     else
         data.start=0
-    if (url=="/get/Contact"){
+    if (url=="/folder"){
+        console.log(data);
+        const modalPath = path.join(__dirname, '/media/仪器资料/'+data.yiqibh);
+          // Open a local file in the default app
+        console.log(modalPath);
+        console.log(shell);
+        if (fs.existsSync(path)){
+        }
+        else{
+            fs.mkdirSync(modalPath);
+        }
+        shell.openItem(modalPath);
+    }
+    else if (url=="/get/Contact"){
     	var where=" where 2>1"
     	if (data.baoxiang)
     		where+=" and  baoxiang like '%"+data.baoxiang+"%'";
