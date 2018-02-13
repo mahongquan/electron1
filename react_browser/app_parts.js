@@ -1,20 +1,25 @@
-console.log("load");
-var sqlite3 = require('sqlite3').verbose();
-var db = new sqlite3.Database('data.sqlite');
-var socket={
-  emit:function(url,data,callback){
-    console.log(url);
-    console.log(data);
-    if(url=="/get/Contact"){
-      
-    }
-  }
-};
 var {Table,Modal,Navbar,Nav,NavItem,DropdownButton,MenuItem}=ReactBootstrap;
 var update=newContext();
 var DateTime=Datetime;
 var host="";
 //var socket=io();
+var app = require('electron').remote; 
+var dialog = app.dialog;
+
+// Or with ECMAScript 6
+var openDialog = function(defaultpath,callback){
+    dialog.showOpenDialog({
+        defaultPath :defaultpath,
+        properties: [
+            'openFile',
+        ],
+        filters: [
+            { name: '*.xls', extensions: ['xls'] },
+        ]
+    },function(res){
+        callback(res[0]) //我这个是打开单个文件的
+    })
+}
 var isEqual=_.isEqual;// from 'lodash/isEqual';
 var find=_.find;// import find from 'lodash/find';
 //var {ContextMenuTrigger,ContextMenu}=ReactContextMenu;
@@ -840,7 +845,7 @@ class PackItemEditNew extends React.Component{
     console.log(e.target);
     console.log(e.target.value);
     console.log(e.target.name);
-    if(this.old.Item[e.target.name]===e.target.value)
+    if(this.old[e.target.name]===e.target.value)
     {
       const bg2=update(this.state.bg,{[e.target.name]:{$set:"#ffffff"}})
       //this.state.bg[e_target_name]="#ffffff";
@@ -863,6 +868,7 @@ class PackItemEditNew extends React.Component{
     console.log(e.target);
     console.log(e.target.value);
     console.log(e.target.name);
+    console.log(this.old)
     if(this.old[e.target.name]===e.target.value)
     {
       const bg2=update(this.state.bg,{[e.target.name]:{$set:"#ffffff"}})
@@ -882,9 +888,9 @@ class PackItemEditNew extends React.Component{
   }
   render=()=>{
     let item={};
-    if(this.state.packitem.Item){
-      item=this.state.packitem.Item;
-    }
+    //if(this.state.packitem.Item){
+      item=this.state.packitem;
+    //}
     return (
         <Modal show={this.state.showModal}  onHide={this.close}>
           <Modal.Header closeButton>
@@ -1070,10 +1076,10 @@ class PackItems extends React.Component {
     const itemRows = items.map((item, idx) => (
       <tr key={idx}>
         <td >{item.id}</td>
-        <td >{item.Item.name}</td>
-        <td>{item.Item.guige}</td>
+        <td >{item.name}</td>
+        <td>{item.guige}</td>
         <td>{item.ct}</td>
-        <td>{item.Item.bh}</td>
+        <td>{item.bh}</td>
         <td  hidden={this.state.release}>{item.pack}</td>
         <td><input type="checkbox" disabled="disabled" name="quehuo" checked={item.quehuo}  /></td>
         <td>
@@ -1191,10 +1197,7 @@ class UsePackEditNew extends React.Component{
   render=()=>{
     let name;
     let id;
-    if (this.state.usepack.Pack){
-      name=this.state.usepack.Pack.name
-      id=this.state.usepack.Pack.id
-    }
+    id=this.state.usepack.pack_id
     return (
         <Modal show={this.state.showModal} onHide={this.close}  dialogClassName="custom-modal">
           <Modal.Header closeButton>
@@ -1253,7 +1256,6 @@ class DlgFolder extends React.Component{
   }
   render=()=> {
     return (
-        <button onClick={this.open}>{this.props.title}
         <Modal show={this.state.showModal} onHide={this.close}  dialogClassName="custom-modal">
           <Modal.Header closeButton>
             <Modal.Title>请等待。。。</Modal.Title>
@@ -1262,7 +1264,6 @@ class DlgFolder extends React.Component{
           <div>{this.state.error}</div>
           </Modal.Body>
         </Modal>
-        </button>
     );
   }
 }
@@ -1354,7 +1355,6 @@ class DlgCheck extends React.Component{
       </tr>
     ));   
     return (
-        <button onClick={this.open}>{this.props.title}
         <Modal show={this.state.showModal} onHide={this.close}  dialogClassName="custom-modal">
           <Modal.Header closeButton>
             <Modal.Title>{this.props.title}</Modal.Title>
@@ -1381,7 +1381,6 @@ class DlgCheck extends React.Component{
           </div>
           </Modal.Body>
         </Modal>
-        </button>
     );
   }
 }
@@ -1412,7 +1411,6 @@ class DlgWait extends React.Component{
   }
   render=()=> {
     return (
-        <button  onClick={this.open}>{this.props.title}
         <Modal show={this.state.showModal} onHide={this.close}  dialogClassName="custom-modal">
           <Modal.Header closeButton>
             <Modal.Title>请等待。。。</Modal.Title>
@@ -1421,7 +1419,6 @@ class DlgWait extends React.Component{
           <div>{this.state.error}</div>
           </Modal.Body>
         </Modal>
-        </button>
     );
   }
 }
@@ -1452,7 +1449,6 @@ class DlgUrl extends React.Component{
   }
   render=()=> {
     return (
-        <button onClick={this.open}>{this.props.title}
         <Modal show={this.state.showModal} onHide={this.close}  dialogClassName="custom-modal">
           <Modal.Header closeButton>
             <Modal.Title>请等待。。。</Modal.Title>
@@ -1461,7 +1457,6 @@ class DlgUrl extends React.Component{
           <div>{this.state.error}</div>
           </Modal.Body>
         </Modal>
-        </button>
     );
   }
 }
@@ -1518,9 +1513,10 @@ class UsePacks2 extends React.Component {
     var url="/UsePackEx";
     var data={"name":this.state.auto_value,contact_id:this.props.contact_id};
     socket.emit("/post/UsePackEx",data,(res) => {
-        var p=res.data;
-        const newFoods = this.state.usepacks.concat(p);
-        this.setState({ usepacks: newFoods });
+      console.log(res);
+      var p=res.data;
+      const newFoods = this.state.usepacks.concat(p);
+      this.setState({ usepacks: newFoods });
     });
   };
   addrow=(pack_id)=>{
@@ -1538,7 +1534,6 @@ class UsePacks2 extends React.Component {
   onEditClick = (id) => {
   };
   onDeleteClick = (itemIndex) => {
-    var url="/UsePack";
     socket.emit("/delete/UsePack",{id:this.state.usepacks[itemIndex].id},(res) => {
         const filteredFoods = this.state.usepacks.filter(
           (item, idx) => itemIndex !== idx,
@@ -1582,7 +1577,7 @@ class UsePacks2 extends React.Component {
         key={idx}
       >
         <td >{usepack.id}</td>
-        <td >{usepack.Pack.name}</td>
+        <td >{usepack.name}</td>
         <td hidden={this.state.release}>{usepack.contact}</td>
         <td hidden={this.state.release} >{usepack.pack}</td>
         <td hidden={this.state.release} >{usepack.hetongbh}</td>
@@ -1695,6 +1690,11 @@ class DlgImport extends React.Component{
           console.log(result.data);
    })
   }
+  openfile=()=>{
+    openDialog(".",(res)=>{
+        socket.importstandard(res);
+    });
+  }
   render=()=>{
     const contactRows = this.state.packs.map((pack, idx) => (
       <tr key={idx} >
@@ -1703,16 +1703,16 @@ class DlgImport extends React.Component{
       </tr>
     ));   
     return (
-        <button className="btn btn-info" onClick={this.open}>导入标样
         <Modal show={this.state.showModal} onHide={this.close} >
           <Modal.Header closeButton>
             <Modal.Title>导入标样</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-          <form  ref="form1" encType="multipart/form-data">
+          <form  style={{display:"none"}} ref="form1" encType="multipart/form-data">
           <input style={{margin:"10px 10px 10px 10px"}} id="file"  accept="application/vnd.ms-excel" type="file" name="file" ref={(ref) => this.fileUpload = ref}/>
           <button  style={{margin:"10px 10px 10px 10px"}} className="btn btn-primary" onClick={this.upload} type="button">上传</button>
           </form>
+          <button  style={{margin:"10px 10px 10px 10px"}} className="btn btn-primary" onClick={this.openfile} type="button">打开文件</button>
           <div style={{"minHeight":"200px"}}>
           <table  className="table-bordered"><thead><tr><td>ID</td><td>名称</td></tr></thead><tbody>
           {contactRows}
@@ -1723,7 +1723,6 @@ class DlgImport extends React.Component{
           </div>
           </Modal.Body>
         </Modal>
-        </button>
     );
   }
 }
@@ -1797,7 +1796,6 @@ class DlgStat extends React.Component {
           }
       }
     return (
-        <NavItem ref="navitem" eventKey={6} href="#" onClick={this.open}>统计
         <Modal ref="modal" show={this.state.showModal} onHide={this.close}  dialogClassName="custom-modal">
           <Modal.Header ref="header" closeButton>
             <Modal.Title>统计</Modal.Title>
@@ -1815,7 +1813,6 @@ class DlgStat extends React.Component {
             <Bar data={data} options={options} width={600} height={300} />
           </Modal.Body>
         </Modal>
-        </NavItem>
     );
   }
 }
@@ -1874,7 +1871,6 @@ class DlgCopyPack  extends React.Component{
   }
   render=()=>{
     return (
-        <NavItem eventKey={5} href="#" onClick={this.open}>复制包
         <Modal show={this.state.showModal} onHide={this.close}>
           <Modal.Header closeButton>
             <Modal.Title>复制包</Modal.Title>
@@ -1916,11 +1912,41 @@ class DlgCopyPack  extends React.Component{
           <p>{this.state.error}</p>
           </Modal.Body>
         </Modal>
-        </NavItem>
     );
   }
 }
 //DlgParts///////////////////////////
+class PackEdit extends React.Component{
+  state={ 
+      showModal: false,
+      pack_id:null,
+    }
+
+  close=()=>{
+    this.setState({ showModal: false });
+  }
+  handleChange(){
+    
+  }
+  open(pack_id) {
+    this.setState({ showModal: true ,pack_id:pack_id});
+  }
+  render() {
+    return (
+        <Modal show={this.state.showModal} onHide={this.close}  dialogClassName="custom-modal">
+          <Modal.Header closeButton>
+            <Modal.Title>编辑包</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+          <label>id:{this.state.pack_id}</label>
+          <div id="id_useusepacks">
+            <PackItems  pack_id={this.state.pack_id}/>
+          </div>
+          </Modal.Body>
+        </Modal>
+    );
+  }
+}
 class DlgPacks extends React.Component {
   mystate = {
     start:0,
@@ -2003,28 +2029,41 @@ class DlgPacks extends React.Component {
   handlePageChange= (e) => {
     this.setState({start_input:e.target.value});
   };
+  handleSearchChange = (e) => {
+    this.mystate.search=e.target.value;
+    this.setState({search:this.mystate.search});
+  };
+  search = (e) => {
+    this.mystate.start=0;
+    this.loaddata();
+  };
+  handleEdit=(pack_id)=>{
+    //this.setState({currentIndex:idx,showModal:true});
+    this.refs.edit1.open(pack_id);
+  }
   mapfunc=(contact, idx) => {
-      //console.log(contact);
-      if (contact.img ==null || contact.image==="" )
+     if (contact.name)
         return (<tr key={idx} >
           <td>{contact.id}</td>
-          <td>{contact.name}</td>
+          <td><a onClick={()=>this.handleEdit(contact.id)}>{contact.name}</a></td>
         </tr>);
-      else
+   else
         return (<tr key={idx} >
           <td>{contact.id}</td>
-          <td>{contact.name}</td>
+          <td><a onClick={()=>this.handleEdit(contact.id)}>[NONAME]</a></td>
         </tr>);
   }
   render=()=>{
     const contactRows = this.state.contacts.map(this.mapfunc);
     return (
-        <NavItem eventKey={4} href="#" onClick={this.open}>包
         <Modal show={this.state.showModal} onHide={this.close} >
           <Modal.Header closeButton>
             <Modal.Title>备件</Modal.Title>
           </Modal.Header>
           <Modal.Body>
+          <PackEdit ref="edit1" title="编辑"  />
+          <input type="text" value={this.state.search}  placeholder="" onChange={this.handleSearchChange} />
+          <button id="id_bt_search" className="btm btn-info" onClick={this.search}>搜索</button>
            <Table responsive bordered condensed><thead>
            <tr>
            <th>ID</th>
@@ -2037,12 +2076,153 @@ class DlgPacks extends React.Component {
       <button id="page_go"  className="btn btn-info" onClick={this.jump}>跳转</button>
           </Modal.Body>
         </Modal>
-        </NavItem>
     );
   }
 };
 
 //DlgItems///////////////////////////
+class ItemEdit extends React.Component{
+  state={ 
+      showModal: false,
+      packitem:{},
+      hiddenPacks:true,
+      bg:{},
+      date_open:false,
+  }
+  close=()=>{
+    this.setState({ showModal: false });
+  }
+
+  open2=(idx)=>{
+    this.setState({ showModal: true,bg:{}});
+    this.index=idx;
+    if (this.index==null){
+      this.old={};
+    }
+    else{
+      this.parent=this.props.parent;
+      this.old=this.parent.state.contacts[this.index];
+    }
+    this.setState({packitem:this.old});
+  }
+  handleSave=(data)=>{
+    var url="/rest/Item";
+    console.log(this.state.packitem);
+    Client.postOrPut(url,this.state.packitem,(res) => {
+      console.log(res);
+        this.setState({contact:res.data});
+        this.parent.handlePackItemChange(this.index,res.data);
+        this.old=res.data;
+        this.close();
+    });
+  }
+  quehuoChange=(e)=>{
+    var quehuo=this.state.packitem.quehuo;
+    quehuo=!quehuo;
+    if(this.old.quehuo===quehuo)
+    {
+      const bg2=update(this.state.bg,{[e.target.name]:{$set:"#ffffff"}})
+      this.setState({bg:bg2});
+    }
+    else{
+       const bg2=update(this.state.bg,{[e.target.name]:{$set:"#8888ff"}})
+      this.setState({bg:bg2}); 
+    }
+    const contact2=update(this.state.packitem,{quehuo: {$set:quehuo}});
+    console.log(contact2);
+    this.setState({packitem:contact2});
+  }
+  handleChange=(e)=>{
+    console.log("change");
+    console.log(e);
+    console.log(e.target);
+    console.log(e.target.value);
+    console.log(e.target.name);
+    if(this.old[e.target.name]===e.target.value)
+    {
+      const bg2=update(this.state.bg,{[e.target.name]:{$set:"#ffffff"}})
+      //this.state.bg[e_target_name]="#ffffff";
+      //console.log("equal");
+      this.setState({bg:bg2});
+    }
+    else{
+       const bg2=update(this.state.bg,{[e.target.name]:{$set:"#8888ff"}})
+      //this.state.bg[e_target_name]="#ffffff";
+      //console.log("equal");
+      this.setState({bg:bg2}); 
+    }
+    const contact2=update(this.state.packitem,{[e.target.name]: {$set:e.target.value}});
+    console.log(contact2);
+    this.setState({packitem:contact2});
+  }
+  render=()=>{
+    return (
+        <Modal show={this.state.showModal} onHide={this.close}>
+          <Modal.Header closeButton>
+            <Modal.Title>编辑备件信息</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <table id="table_input" className="table-condensed" >
+            <tbody> 
+            <tr >
+                <td >
+                    ID:
+                </td>
+                <td >
+                    <input type="text" id="id" name="id" readOnly="true"  disabled="disabled"    defaultValue={this.state.packitem.id} />
+                </td>
+            </tr><tr>
+                <td>
+                    名称:
+                </td>
+                <td>
+                    <input  style={{"backgroundColor":this.state.bg.name}}  type="text" id="name" name="name" value={this.state.packitem.name} onChange={this.handleChange} />
+                </td>
+            </tr><tr>
+                <td>
+                    <label>规格:</label>
+                </td>
+                <td>
+                    <input style={{"backgroundColor":this.state.bg.guige}} type="text"  name="guige" 
+                    value={this.state.packitem.guige}  onChange={this.handleChange} />
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label>编号:</label>
+                </td>
+                <td>
+                    <input style={{"backgroundColor":this.state.bg.bh}} type="text" id="bh" name="bh" value={this.state.packitem.bh}  onChange={this.handleChange} />
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label>数量:</label>
+                </td>
+                <td>
+                    <input type="text" style={{"backgroundColor":this.state.bg.ct}}
+                    id="ct" name="ct"  value={this.state.packitem.ct} onChange={this.handleChange} />
+                </td>
+            </tr>  
+            <tr>
+                <td>
+                    <label>单位:</label>
+                </td>
+                <td>
+                    <input type="text" style={{"backgroundColor":this.state.bg.danwei}}
+                    id="danwei" name="danwei"  value={this.state.packitem.danwei} onChange={this.handleChange} />
+                </td>
+            </tr> 
+            </tbody>
+            </table>
+       <div> 
+       <button className="btn btn-primary" id="bt_save" onClick={this.handleSave} >保存</button> 
+       </div>
+                </Modal.Body>
+        </Modal>
+    );
+  }
+}
 class DlgItems extends React.Component {
   mystate = {
     start:0,
@@ -2125,13 +2305,24 @@ class DlgItems extends React.Component {
   handlePageChange= (e) => {
     this.setState({start_input:e.target.value});
   };
+  handleSearchChange = (e) => {
+    this.mystate.search=e.target.value;
+    this.setState({search:this.mystate.search});
+  };
+  search = (e) => {
+    this.mystate.start=0;
+    this.loaddata();
+  };
+  handleEdit=(idx)=>{
+    this.refs.dlg.open2(idx);
+  }
   mapfunc=(contact, idx) => {
       //console.log(contact);
-      if (contact.img ==null || contact.image==="" )
+     if (!contact.image || contact.image==="")
         return (<tr key={idx} >
           <td>{contact.id}</td>
           <td>{contact.bh}</td>
-          <td>{contact.name}</td>
+          <td><a onClick={()=>this.handleEdit(idx)}>{contact.name}</a></td>
           <td>{contact.guige}</td>
           <td>{contact.danwei}</td>
           <td></td>
@@ -2140,21 +2331,23 @@ class DlgItems extends React.Component {
         return (<tr key={idx} >
           <td>{contact.id}</td>
           <td>{contact.bh}</td>
-          <td>{contact.name}</td>
+          <td><a onClick={()=>this.handleEdit(idx)}>{contact.name}</a></td>
           <td>{contact.guige}</td>
           <td>{contact.danwei}</td>
-          <td><img alt="no" src={"/media/"+contact.image} width="100" height="100"></img></td>
+          <td><img alt="no" src={"./media/"+contact.image} width="100" height="100"></img></td>
         </tr>);
   }
   render=()=>{
     const contactRows = this.state.contacts.map(this.mapfunc);
     return (
-        <NavItem eventKey={4} href="#" onClick={this.open}>备件
         <Modal show={this.state.showModal} onHide={this.close}  dialogClassName="custom-modal">
           <Modal.Header closeButton>
             <Modal.Title>备件</Modal.Title>
           </Modal.Header>
           <Modal.Body>
+          <ItemEdit ref="dlg" parent={this} />
+              <input type="text" value={this.state.search}  placeholder="" onChange={this.handleSearchChange} />
+              <button id="id_bt_search" className="btm btn-info" onClick={this.search}>搜索</button>
            <Table responsive bordered condensed><thead>
            <tr>
            <th>ID</th>
@@ -2171,7 +2364,6 @@ class DlgItems extends React.Component {
       <button id="page_go"  className="btn btn-info" onClick={this.jump}>跳转</button>
           </Modal.Body>
         </Modal>
-        </NavItem>
     );
   }
 };
@@ -2254,6 +2446,9 @@ class ContactEdit2New  extends React.Component{
     }
     else{
       this.old=this.parent.state.contacts[this.index];
+      if(!this.old.addr){this.old.addr=""}
+      if(!this.old.channels){this.old.channels=""}
+      if(!this.old.yiqixinghao){this.old.yiqixinghao=""}
       this.setState({hiddenPacks:false});
     }
     this.setState({contact:this.old});
@@ -2746,12 +2941,7 @@ class App extends React.Component {
     this.setState({start_input:e.target.value});
   };
 
-  onDetailClick=(contactid)=>{
-    console.log(contactid);
-    socket.emit("/parts/showcontact",{id:contactid},(data)=>{
-        console.log(data);
-    });
-  }
+
   handleNext = (e) => {
     this.mystate.start=this.mystate.start+this.mystate.limit;
     if(this.mystate.start>this.mystate.total-this.mystate.limit) 
@@ -2798,6 +2988,56 @@ class App extends React.Component {
     //this.setState({currentIndex:idx});
     this.refs.contactedit.open2(idx);
   }
+  opendlgurl=(url,parent,idx,data)=>{
+    this.currentIndex=idx;
+    this.refs.dlgurl.open(url,data,this.handleContactChange2); 
+  }
+  openDlgItems=()=>{
+    this.refs.dlgitems.open();
+  }
+  opendlgfolder=(contactid)=>{
+   this.refs.dlgfolder.open(contactid); 
+  }
+  opendlgcheck=(contactid,yiqibh)=>{
+   this.refs.dlgcheck.open(contactid,yiqibh); 
+  }
+  openDlgPacks=()=>{
+    this.refs.dlgpacks.open();
+  }
+  openDlgCopyPack=()=>{
+    this.refs.dlgcopypack.open();
+  }
+  openDlgStat=()=>{
+    this.refs.dlgstat.open();
+  }
+  openDlgImport=()=>{
+    this.refs.dlgimport.open();
+  }
+  openDlgImportHT=()=>{
+    this.refs.dlgimportHT.open();
+  }
+  onDetailClick=(contactid)=>{
+        const BrowserWindow = require('electron').remote.BrowserWindow
+        const path = require('path')
+        const modalPath = path.join('file://', __dirname, '../t_装箱单.htm')
+        let win = new BrowserWindow({ width: 800, height: 600 })
+        win.on('close', function () { win = null })
+        console.log(modalPath);
+        win.loadURL(modalPath)
+        win.show()
+  }
+//   const BrowserWindow = require('electron').remote.BrowserWindow
+// const path = require('path')
+
+// const newWindowBtn = document.getElementById('new-window')
+
+// newWindowBtn.addEventListener('click', function (event) {
+//   const modalPath = path.join('file://', __dirname, '../../sections/windows/modal.html')
+//   let win = new BrowserWindow({ width: 400, height: 320 })
+//   win.on('close', function () { win = null })
+//   win.loadURL(modalPath)
+//   win.show()
+// })
   render() {
     console.log("render=========================");
     const contactRows = this.state.contacts.map((contact, idx) => (
@@ -2809,6 +3049,14 @@ class App extends React.Component {
         <td>{contact.yiqixinghao}</td>
         <td>
           <a onClick={()=>this.handleEdit(idx)}>{contact.yiqibh}</a>
+           <DropdownButton title="" id="id_dropdown3">
+            <MenuItem onSelect={() => this.onDetailClick(contact.id)}>详细</MenuItem>
+            <MenuItem onSelect={()=>this.opendlgurl("/rest/updateMethod",this,idx,{id:contact.id})}>更新方法</MenuItem>
+            <MenuItem onSelect={()=>this.opendlgwait(contact.id)}>全部文件</MenuItem>
+            <MenuItem onSelect={()=>this.opendlgcheck(contact.id,contact.yiqibh)}>核对备料计划</MenuItem>
+            <MenuItem onSelect={()=>this.opendlgfolder(contact.id)}>资料文件夹</MenuItem>
+            
+          </DropdownButton>
         </td>
         <td>{contact.baoxiang}</td>
         <td>{contact.shenhe}</td>
@@ -2816,16 +3064,6 @@ class App extends React.Component {
         <td>{contact.tiaoshi_date}</td>
         <td>{contact.hetongbh}</td>
         <td>{contact.method}</td>
-        <td>
-        <div className="btn-group" role="group">
-         <a className="contact_detail" data={contact.id} onClick={() => this.onDetailClick(contact.id)}>详细</a>
-         <DlgUrl url="/rest/updateMethod" parent={this} index={idx} data={{id:contact.id}} title="更新方法" />
-         <DlgWait contact_id={contact.id} title="全部文件" />
-         <DlgCheck contact_id={contact.id} title="核对备料计划" />
-         <DlgFolder contact_id={contact.id} title="资料文件夹" />
-         <DlgFolder2 contact_id={contact.id} initpath={"仪器资料/"+contact.yiqibh} title="资料文件夹2" />
-         </div>
-        </td>
       </tr>
     ));
     var hasprev=true;
@@ -2856,6 +3094,15 @@ class App extends React.Component {
     <div id="todoapp" className="table-responsive">
     <div align="center" style={{display:this.state.connect_error?"":"none",textAlign: "center",color:"red"}} >!!!!!!!!!!连接错误!!!!!!!</div>
     <ContactEdit2New ref="contactedit" parent={this}   index={this.state.currentIndex} title="编辑"  />
+    <DlgItems ref="dlgitems" />
+    <DlgPacks ref="dlgpacks" />
+    <DlgCopyPack ref="dlgcopypack" />
+    <DlgStat ref="dlgstat" />
+    <DlgImport ref="dlgimport" />
+    <DlgCheck ref="dlgcheck" />
+    <DlgFolder ref="dlgfolder" />
+    <DlgWait ref="dlgwait" />
+    <DlgUrl ref="dlgurl" />
     <Navbar className="navbar-inverse">
       <Navbar.Header>
         <Navbar.Brand>
@@ -2864,10 +3111,10 @@ class App extends React.Component {
       </Navbar.Header>
       <Nav>
         <NavItem eventKey={1} href="#">合同</NavItem>
-        <DlgPacks />
-        <DlgItems />
-        <DlgCopyPack />
-        <DlgStat />
+        <NavItem eventKey={2} href="#" onClick={this.openDlgPacks}>包</NavItem>
+        <NavItem eventKey={3} href="#" onClick={this.openDlgItems}>备件</NavItem>
+        <NavItem eventKey={4} href="#" onClick={this.openDlgCopyPack}>复制包</NavItem>
+        <NavItem eventKey={5} href="#" onClick={this.openDlgStat}>统计</NavItem>
       </Nav>
     </Navbar>
     <table>
@@ -2895,8 +3142,8 @@ class App extends React.Component {
          <button className="btn btn-primary" onClick={()=>this.handleEdit(null)}>新仪器</button>
     </td>
      <td>
-          <DlgImport/>
-    </td>
+   <button className="btn btn-info" onClick={this.openDlgImport}>导入标样</button>
+  </td>
     <td>过滤:
     <DropdownButton title={this.state.baoxiang} id="id_dropdown2">
       <MenuItem onSelect={() => this.onSelectBaoxiang("马红权")}>马红权</MenuItem>
@@ -2909,7 +3156,7 @@ class App extends React.Component {
   </tbody>
   </table>
   <table className="table-bordered"><thead><tr><th>ID</th><th>用户单位</th><th>客户地址</th><th>通道配置</th><th>仪器型号</th><th>仪器编号</th><th>包箱</th><th>审核</th>
-  <th>入库时间</th><th>调试时间</th><th>合同编号</th><th>方法</th><th>操作</th></tr></thead><tbody id="contact-list">{contactRows}</tbody>
+  <th>入库时间</th><th>调试时间</th><th>合同编号</th><th>方法</th></tr></thead><tbody id="contact-list">{contactRows}</tbody>
   </table>{prev}
   <label id="page">{this.state.start+1}../{this.state.total}</label>{next}
       <input maxLength="6" size="6" onChange={this.handlePageChange} value={this.state.start_input} />
@@ -2918,7 +3165,7 @@ class App extends React.Component {
     );
   }
 }
-db.serialize(function() {
+//db.serialize(function() {
   ReactDOM.render(<App />, document.getElementById('app'));
-});
+//});
 
