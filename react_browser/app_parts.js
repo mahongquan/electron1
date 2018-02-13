@@ -829,7 +829,7 @@ class PackItemEditNew extends React.Component{
     console.log(e.target);
     console.log(e.target.value);
     console.log(e.target.name);
-    if(this.old.Item[e.target.name]===e.target.value)
+    if(this.old[e.target.name]===e.target.value)
     {
       const bg2=update(this.state.bg,{[e.target.name]:{$set:"#ffffff"}})
       //this.state.bg[e_target_name]="#ffffff";
@@ -852,6 +852,7 @@ class PackItemEditNew extends React.Component{
     console.log(e.target);
     console.log(e.target.value);
     console.log(e.target.name);
+    console.log(this.old)
     if(this.old[e.target.name]===e.target.value)
     {
       const bg2=update(this.state.bg,{[e.target.name]:{$set:"#ffffff"}})
@@ -871,9 +872,9 @@ class PackItemEditNew extends React.Component{
   }
   render=()=>{
     let item={};
-    if(this.state.packitem.Item){
-      item=this.state.packitem.Item;
-    }
+    //if(this.state.packitem.Item){
+      item=this.state.packitem;
+    //}
     return (
         <Modal show={this.state.showModal}  onHide={this.close}>
           <Modal.Header closeButton>
@@ -1504,9 +1505,10 @@ class UsePacks2 extends React.Component {
     var url="/UsePackEx";
     var data={"name":this.state.auto_value,contact_id:this.props.contact_id};
     socket.emit("/post/UsePackEx",data,(res) => {
-        var p=res.data;
-        const newFoods = this.state.usepacks.concat(p);
-        this.setState({ usepacks: newFoods });
+      console.log(res);
+      var p=res.data;
+      const newFoods = this.state.usepacks.concat(p);
+      this.setState({ usepacks: newFoods });
     });
   };
   addrow=(pack_id)=>{
@@ -1524,7 +1526,6 @@ class UsePacks2 extends React.Component {
   onEditClick = (id) => {
   };
   onDeleteClick = (itemIndex) => {
-    var url="/UsePack";
     socket.emit("/delete/UsePack",{id:this.state.usepacks[itemIndex].id},(res) => {
         const filteredFoods = this.state.usepacks.filter(
           (item, idx) => itemIndex !== idx,
