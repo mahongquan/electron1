@@ -1,7 +1,10 @@
 console.log("load");
+const path = require("path");
+var a = require(path.resolve('hello_nodegyp/build/Release/hello.node'));
+console.log(a);
+
 var sqlite3 = require('sqlite3').verbose();
 var db = new sqlite3.Database('./data.db');
-const path = require('path')
 const {shell} = require('electron');
 const fs = require('fs');
 var app_root=path.resolve(".");

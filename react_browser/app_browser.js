@@ -1,4 +1,4 @@
-var {Table,Modal,Navbar,Nav,NavItem,DropdownButton,MenuItem}=ReactBootstrap;
+var {Button,Overlay,OverlayTrigger,Tooltip,Table,Modal,Navbar,Nav,NavItem,DropdownButton,MenuItem}=ReactBootstrap;
 var update=newContext();
 var DateTime=Datetime;
 var host="";
@@ -38,66 +38,44 @@ function getParent(path, onSuccess) {
 }
 
 class File extends React.Component {
-
     glyphClass=()=>{
-            var className = "glyphicon ";
-            className += this.props.isdir ? "glyphicon-folder-open" : "glyphicon-file";
-            return className;
+        var className = "glyphicon ";
+        className += this.props.isdir ? "glyphicon-folder-open" : "glyphicon-file";
+        return className;
     }
-
-
-
-    remove=()=> {
-            socket.emit("/fs/remove",{path:path},
-              ()=>{this.props.browser.reloadFilesFromServer();}
-            );
-    }
-
-    rename=(updatedName)=> {
-            socket.emit("/fs/rename2",
-              {path:this.props.path,name:updatedName},
-              ()=>{this.props.browser.reloadFilesFromServer();}
-            );
-    }
-
-    onRemove=(e,data)=>{
-            console.log("onRemove");
-            var type = this.props.isdir ? "folder" : "file";
-            var remove =window.confirm("Remove "+type +" '"+ this.props.path +"' ?");
-            if (remove)
-                    this.remove();
-    }
-
-    onRename=(e,data)=>{
-            console.log("onRename");
-            var type = this.props.isdir ? "folder" : "file";
-            var updatedName = prompt("Enter new name for "+type +" "+this.props.name);
-            if (updatedName != null)
-                    this.rename(updatedName);
-    }
-
     renderList=()=>{
-            //var dateString =  new Date(this.props.time*1000).toLocaleString();//toGMTString()
-            var dateString =  new Date(this.props.time).toLocaleString();
-            var glyphClass = this.glyphClass();
-            return (<tr id={this.props.id} ref={this.props.path}>
-                            <td>
-                            <a onClick={this.props.onClick}><span style={{fontSize:"1.5em", paddingRight:"10px"}} className={glyphClass}/>{this.props.name}</a>
-                            </td>
-                            <td>{File.sizeString(this.props.size)}</td>
-                            <td>{dateString}</td>
-                            </tr>);
+        var dateString =  new Date(this.props.time).toLocaleString();//toGMTString()
+        //var glyphClass = this.glyphClass();
+        let style1;
+        if (this.props.isdir){
+            console.log("isdir");
+            style1={backgroundColor:"#cc0"}
+        }
+        else{
+            style1={}   
+        }
+        return (<tr id={this.props.id} ref={this.props.path}>
+                        <td>
+                        <a style={style1} onContextMenu={this.props.handleContextMenu} onClick={this.props.onClick}>
+                        {this.props.name}</a>
+                        </td>
+                        <td>{File.sizeString(this.props.size,this.props.isdir)}</td>
+                        <td>{dateString}</td>
+                        </tr>);
     }
     renderGrid=()=>{
-            var glyphClass = this.glyphClass();
-            return (
-                <div ref={this.props.path} >
-                        <a id={this.props.id} onClick={this.props.onClick}>
-                        <span style={{fontSize:"3.5em"}} className={glyphClass}/>
-                        </a>
-                    <h4 >{this.props.name}</h4>
-
-                </div>);
+        //var glyphClass = this.glyphClass();
+        let style1;
+        if (this.props.isdir){
+            style1={display:"inline-block" ,marginRight:"10px", marginLeft: "10px",backgroundColor:"#cc0"}
+        }
+        else{
+            style1={display:"inline-block",marginRight:"10px",marginLeft: "10px"}   
+        }
+        return (
+            <a style={style1} onContextMenu={this.props.handleContextMenu}  onClick={this.props.onClick}>
+                {this.props.name}
+            </a>);
     }
 
     render=()=>{
@@ -113,7 +91,10 @@ class File extends React.Component {
 
     static sizes = [{count : 1, unit:"bytes"}, {count : 1024, unit: "kB"}, {count: 1048576 , unit : "MB"}, {count: 1073741824, unit:"GB" } ]
 
-    static sizeString = (sizeBytes)=>{
+    static sizeString = (sizeBytes,isdir)=>{
+        if (isdir){
+            return null;
+        }
         var iUnit=0;
         var count=0;
         for (iUnit=0; iUnit < File.sizes.length;iUnit++) {
@@ -125,31 +106,71 @@ class File extends React.Component {
     }
 };
 class  Browser extends React.Component {
+  channels_change=(event, value)=>{
+    console.log("auto_change");
+    //this.setState({ yiqixinghao_value:value, auto_loading: false });
+    this.channels_select(null,value) 
+  }
+  channels_input=(event)=>{
+    console.log(event);
+    //this.setState({ yiqixinghao_value:value, auto_loading: false });
+    this.channels_select(null,event) 
+  }
+  channels_select=(value, item)=>{
+      console.log("selected");
+      this.setState({channels:item});
+  }
+   matchStateToTerm=(state, value)=>{
+     return      state.toLowerCase().indexOf(value.toLowerCase()) !== -1 ;
+  }
     state= {
-              paths : ["."],
-              files: [],
-              sort: File.sizeSort,
-              gridView: false,
-              current_path:"",
-              displayUpload:"none",
-          }
-
+          channels:"",
+          isroot:true,
+          paths : ["."],
+          files: [],
+          sort: File.pathSort,
+          gridView: true,
+          current_path:".",
+          displayUpload:"none",
+          showcontext: false,
+          target:null,
+          pathIdx:null,
+          openfilepath:null,
+          filecontent:"",
+          filechange:false,
+          mode:"text",
+          connect_error:false,
+    }
+  handleContextMenu = (event) => {
+    //console.log(event);
+    event.preventDefault();
+    event.stopPropagation();
+    this.setState({target:event.target,showcontext:true});
+    setTimeout(()=>{
+            this.setState({showcontext:false});
+        },5000);
+  }
     loadFilesFromServer=(path)=>{
+        if (path==="." || path==="./"){
+            this.setState({isroot:true});
+        }
+        else{
+            this.setState({isroot:false});   
+        }
         var self=this;
-            socket.emit("/fs/children",{path:path},
-              (data)=>{
-                    var files = data.children.sort(self.state.sort);
-                    var paths = self.state.paths;
-                    if (paths[paths.length-1] !== path)
-                    paths = paths.concat([path])
-                    self.setState(
-                            {files: files,
-                                    paths: paths,
-                            sort: self.state.sort,
-                            gridView: self.state.gridView});
-                    self.updateNavbarPath(self.currentPath());
-              }
-            );
+            socket.emit("/fs/children",{path:path},(data)=>{
+                var files = data.children.sort(self.state.sort);
+                var paths = self.state.paths;
+                if (paths[paths.length-1] !== path) paths = paths.concat([path])
+                self.setState(
+                    {files: files,
+                     paths: paths,
+                     sort: self.state.sort,
+                     gridView: self.state.gridView,
+                     showcontext:false
+                    });
+                self.updateNavbarPath(self.currentPath());
+            });
     }
     updateNavbarPath=(path)=>{
          // var elem  = document.getElementById("pathSpan");
@@ -162,69 +183,76 @@ class  Browser extends React.Component {
     }
 
     currentPath =()=>{
+        if (this.state.paths.length>0)
             return this.state.paths[this.state.paths.length-1]
+        else
+            return "."
     }
 
     onBack =()=>{
-            if (this.state.paths.length <2) {
-                    alert("Cannot go back from "+ this.currentPath());
-                    return;
-            }
-            var paths2=this.state.paths.slice(0,-1);
-            this.setState({paths:paths2});
-            this.loadFilesFromServer(paths2[paths2.length-1])
+        if (this.state.paths.length <2) {
+                alert("Cannot go back from "+ this.currentPath());
+                return;
+        }
+        var paths2=this.state.paths.slice(0,-1);
+        this.setState({paths:paths2});
+        this.loadFilesFromServer(paths2[paths2.length-1])
     }
 
     onUpload=()=>{
-            this.setState({displayUpload:""});
+        this.setState({displayUpload:""});
     }
 
     onParent=()=>{
-            var onSuccess = function(data) {
-                    var parentPath = data.path;
+        console.log("onParent");
+        var thepath=this.currentPath();
+        if(thepath==="."){
+            alert(". 已经是根目录!");
+        }
+        else{
+            var data={path:thepath};
+            console.log(data);
+            socket.emit("/fs/parent",data,(res)=>{
+                if (res.isroot){
+                    alert("已经是根目录!");
+                }
+                else{
+                    var parentPath = res.path;
                     this.updatePath(parentPath);
-            }.bind(this);
-            getParent(this.currentPath(), onSuccess);
+                }
+            });
+        }
     }
 
     alternateView=()=>{
-            var updatedView = !  this.state.gridView;
+        var updatedView = !  this.state.gridView;
 
-            this.setState(
-              {
-                    gridView: updatedView
-              });
+        this.setState(
+          {
+                gridView: updatedView,
+                showcontext:false
+          });
     }
-
-
-    uploadFile=()=>{
+    uploadFile=(evt)=>{
+        console.log(evt);
         var path = this.currentPath();
-        // var readFile = evt.target.files[0];
-        // var name = readFile.name;
-        // console.log(readFile);
-        // socket.emit("/fs/upload",{},()=>{});
-        // var formData = new FormData();
-        // formData.append("file", readFile, name);
-
-        // var xhr = new XMLHttpRequest();
-        // xhr.open('POST', buildUploadUrl(path, name) , true);
-        // xhr.onreadystatechange=function()
-        // {
-        //         if (xhr.readyState !== 4)
-        //                 return;
-
-        //         if (xhr.status === 200){
-        //                 alert("Successfully uploaded file "+ name +" to "+ path);
-        //                 this.reloadFilesFromServer();
-        //         }
-        //         else
-        //                ;// console.log(request.status);
-        // }.bind(this);
-        // xhr.send(formData);
+        const file = evt.target.files[0];
+        var stream = ss.createStream();
+        // upload a file to the server.
+        ss(socket).emit('upload', stream, {path:path,name:file.name,size: file.size},(res)=>{
+           console.log(res);
+           this.reloadFilesFromServer();
+           this.setState({displayUpload:"none"});
+        });
+        ss.createBlobReadStream(file).pipe(stream);
     }
-
-
     componentDidMount=()=>{
+        // socket.on("connect_error",()=>{
+        //   this.setState({connect_error:true});
+        // })
+        // socket.on("connect",()=>{
+        //   this.setState({connect_error:false});
+        // })
         console.log("mount======");
         console.log(this.props.initpath);
         if (this.props.initpath)
@@ -257,18 +285,37 @@ class  Browser extends React.Component {
             this.loadFilesFromServer(path);
     }
     getContent=(path)=>{
-        console.log("getContent");
+        console.log("content");
         console.log(path);
+        socket.emit("content",{path:path},(data)=>{
+            //console.log(data);
+            var ext=path.split(".").pop();
+            let mode;
+            if (ext==="js"){
+                mode="javascript";
+            }   
+            else if (ext==="py"){
+                mode="python";
+            }
+            else{
+                mode="text";
+            }
+            this.setState({
+                filecontent:data
+                ,filechange:false
+                ,showcontext:false
+                ,openfilepath:path
+                ,mode:mode
+            });
+        });
     }
     mkdir=()=>{
-
-            var newFolderName = prompt("Enter new folder name");
-            if (newFolderName == null)
-                    return;
-            socket.emit(
-              buildMkdirUrl(this.currentPath(),newFolderName),
-              this.reloadFilesFromServer
-            );
+        var newFolderName = prompt("Enter new folder name");
+        if (newFolderName == null)
+                return;
+        socket.emit("mkdir",{path:this.currentPath(),name:newFolderName},
+          this.reloadFilesFromServer
+        );
     }
     onClick=(f)=>{
         console.log("onClick");
@@ -281,128 +328,252 @@ class  Browser extends React.Component {
         }
     }
     mapfunc=(f, idx)=>{
-      var id  =  File.id(f.name);
-      return (<File key={idx}  id={id} gridView={this.state.gridView} onClick={()=>this.onClick(f)} 
-      path={f.path} name={f.name} isdir={f.isdir} size={f.size} time={f.time} browser={this}
-      />)
+        var id  =  File.id(f.name);
+        return (
+            <File key={idx}  id={id} gridView={this.state.gridView} onClick={()=>this.onClick(f)} 
+                handleContextMenu={this.handleContextMenu}
+                path={f.path} name={f.name} isdir={f.isdir} size={f.size} time={f.time} browser={this}
+            />);
     }
-    render=()=>{
-        const files = this.state.files.map(this.mapfunc);
-
-            var gridGlyph = "glyphicon glyphicon-th-large";
-            var listGlyph = "glyphicon glyphicon-list";
-            var className = this.state.gridView ? listGlyph : gridGlyph;
-            var toolbar=(<div>
-            <nav className="navbar navbar-inverse ">
-                        <div className="navbar-header">
-                                <button type="button" className="navbar-toggle" data-toggle="collapse" data-target="#example-navbar-collapse">
-                                        <span className="sr-only">Toggle navigation</span>
-                                        <span className="icon-bar"></span>
-                                        <span className="icon-bar"></span>
-                                        <span className="icon-bar"></span>
-                                </button>
-                        </div>
-                        <div className="collapse navbar-collapse" id="example-navbar-collapse">
-                                <ul className="nav navbar-nav">
-                                        <li id="backButton"><a onClick={this.onBack}><span className="glyphicon glyphicon-arrow-left"/></a></li>
-                                        <li id="parentButton"><a onClick={this.onParent} ><span className="glyphicon glyphicon-arrow-up"/></a></li>
-                                        <li id="uploadButton"><a onClick={this.onUpload} ><span className="glyphicon glyphicon-upload"/></a></li>
-                                        <li id="mkdirButton"><a onClick={this.mkdir} ><span className="glyphicon glyphicon-folder-open"/></a></li>
-                                        <li id="alternateViewButton"><a onClick={this.alternateView}>
-                                       <span ref="altViewSpan" className={className} />
-                                        </a></li>
-                                        <li><a id="pathSpan"><span className="glyphicon glyphicon-chevron-right"/>{this.state.current_path}</a></li>
-                                </ul>
-                        </div>
-                </nav>
-    <input type="file" id="uploadInput" onChange={this.uploadFile()} style={{display:this.state.displayUpload}} /></div>);
-            if (this.state.gridView)
-            {
-                var files2=[];
-                var row=[]
-                var ncols=3
-                for(var i in files){
-                    if (i % ncols ===0)
-                    {
-                        if (row.length>0){
-                            files2.push(row)
-                            row=[]
-                            row.push(files[i]);
-                        }
-                        else{
-                            row.push(files[i]);   
-                        }
-                    }
-                    else{
-                        row.push(files[i]);
-                    }
-                }
-                if(row.length>0){files2.push(row)}
-                var files2_t=[]
-                for(i in files2){
-                    var cols=[]
-                    for(var j in files2[i]){
-                        cols.push((<td key={j} >{files2[i][j]}</td>))
-                    }
-                    row=(<tr key={i}>{cols}</tr>);
-                    files2_t.push(row);
-                }
-                return (<div>
-                {toolbar}
-                <table>
-                <tbody>{files2_t}
-                </tbody>
-                </table>
-                </div>);
-
+    onChange=(newValue)=>{
+      //console.log('change',newValue);
+        this.setState({
+            filecontent:newValue
+            ,filechange:true
+        });
+    }
+    genpath=(path)=>{
+        console.log("genpath=============")
+        console.log(path);
+        var paths=path.split("/");
+        //if (paths.length==1) return null;
+        console.log(paths);
+        var r=[]
+        var i=0;
+        while(i<paths.length){
+            var s="";
+            for(var j=0;j<i+1;j++){
+                s+=paths[j];
+                if (j<i) s+="/";
+            }
+            //console.log(paths[i])
+            //console.log(s)
+            r.push([s,paths[i]])
+            i++;
+        }
+        r.shift();
+        // if(r.length===0){
+        //     this.isroot=true;
+        // }
+        // else{
+        //     this.isroot=false;   
+        // }
+        var hs=r.map((item,idx)=>{
+            let style1;
+            if(idx===this.state.pathIdx){
+                style1={marginLeft:"6px",backgroundColor:"#00C"};
             }
             else{
-              var sortGlyph = "glyphicon glyphicon-sort";
-              return (<div>
-                              {toolbar}
-                              <table className="table table-responsive table-striped table-hover">
-                              <thead><tr>
-                              <th><button onClick={this.pathSort} className="btn btn-default"><span className={sortGlyph}/>名称</button></th>
-                              <th><button onClick={this.sizeSort} className="btn btn-default"><span className={sortGlyph}/>大小</button></th>
-                              <th><button onClick={this.timeSort} className="btn btn-default"><span className={sortGlyph}/>修改日期</button></th>
-                              </tr></thead>
-                              <tbody>
-                              {files}
-                              </tbody>
-                              </table>
-
-                </div>)
+                style1={marginLeft:"6px"}
             }
+            return <span key={idx} 
+                onMouseEnter={()=>this.onMouseEnter(idx)}
+                onMouseLeave={()=>this.onMouseLeave(idx)}
+                style={style1} 
+                onClick={()=>{this.linkclick(item[0])}}>{item[1]}/</span>
+        })
+        return hs;
     }
-}
-/////////////
-class DlgFolder2 extends React.Component{
-  state={ 
-      showModal: false,
-      hiddenPacks:true,
-      error:"",
+    onMouseLeave=(idx)=>{
+        this.setState({pathIdx:null});
     }
-  close=()=>{
-    this.setState({ showModal: false });
-  }
+    onMouseEnter=(idx)=>{
+        this.setState({pathIdx:idx});
+    }
+    linkclick=(e)=>{
+        console.log(e);
+        this.updatePath(e);
+    }
+    rootclick=()=>{
+        this.updatePath(".")
+    }
+    onRename=()=>{
+        //var type = this.props.isdir ? "folder" : "file";
+        var path=this.state.current_path+"/"+this.state.target.text;
+        var updatedName = prompt("Enter new name for "+this.state.target.text);
+        if (updatedName != null){
+            socket.emit("rename",{path:path,name:updatedName},()=>{
+                this.reloadFilesFromServer();
+                this.setState({showcontext:false});
+            });
+        }
+    }
+    onRemove=()=>{
+        console.log("onRemove");
+        //var type = this.props.isdir ? "folder" : "file";
+        var path=this.state.current_path+"/"+this.state.target.text;
+        var remove =window.confirm("Remove  '"+ path +"' ?");
+        if (remove){
+            socket.emit("remove",{path:path},()=>{
+                this.reloadFilesFromServer();
+                this.setState({showcontext:false});
+            });
+        }
+    }
+    savefilecontent=()=>{
+        socket.emit("savefile",{path:this.state.openfilepath,content:this.state.filecontent},()=>{
+                this.reloadFilesFromServer();
+                this.setState({
+                    showcontext:false
+                    ,filechange:false
+                });
+        });
+    }
 
-  open=()=>{
-   this.setState({ showModal: true });
-  }
-  render=()=>{
-    return (
-        <button onClick={this.open}>文件浏览
-        <Modal show={this.state.showModal} onHide={this.close}  dialogClassName="custom-modal">
-          <Modal.Header closeButton>
-            <Modal.Title>文件浏览</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-          <Browser initpath={this.props.initpath}/> 
-          </Modal.Body>
-        </Modal>
-        </button>
-    );
-  }
+    linkclick=(e)=>{
+        console.log(e);
+        this.updatePath(e);
+    }
+    rootclick=()=>{
+        this.updatePath(".")
+    }
+    render=()=>{
+        console.log(this.state.paths);
+        const tooltipback = (
+          <Tooltip id="tooltipback"><strong>back</strong></Tooltip>
+        );
+        const tooltipparent = (
+          <Tooltip id="tooltipparent"><strong>parent</strong></Tooltip>
+        );
+        const tooltipupload = (
+          <Tooltip id="tooltipparent"><strong>upload</strong></Tooltip>
+        );
+        const files = this.state.files.map(this.mapfunc);
+        var pathshow=this.genpath(this.state.current_path);
+        var gridGlyph = "glyphicon glyphicon-th-large";
+        var listGlyph = "glyphicon glyphicon-list";
+        var className = this.state.gridView ? listGlyph : gridGlyph;
+        var toolbar=(
+<div>
+    <div align="center" style={{display:this.state.connect_error?"":"none",textAlign: "center",color:"red"}} >!!!!!!!!!!连接错误!!!!!!!</div>
+            <Overlay target={this.state.target} 
+                container={this} show={this.state.showcontext}  placement="bottom">
+                <Tooltip id="tooltip1" >
+                    <div onClick={this.onRename}>rename</div>
+                    <div onClick={this.onRemove}>remove</div>
+                </Tooltip>
+            </Overlay>
+            <Navbar inverse collapseOnSelect>
+                <Navbar.Header>
+                  <Navbar.Brand>Browser
+                  </Navbar.Brand>
+                  <Navbar.Toggle />
+                </Navbar.Header>
+                <Navbar.Collapse>
+                  <Nav>
+                    <NavItem eventKey={1} href="#">
+                        <OverlayTrigger placement="bottom" overlay={tooltipback}>
+                            <span onClick={this.onBack} className="glyphicon glyphicon-arrow-left">
+                            </span>
+                        </OverlayTrigger>
+                    </NavItem>
+                    <NavItem disabled={this.state.isroot} eventKey={2} href="#">
+                        <OverlayTrigger placement="bottom" overlay={tooltipparent}>
+                            <span onClick={this.onParent} className="glyphicon glyphicon-arrow-up"/>
+                       </OverlayTrigger>
+                    </NavItem>
+                    <NavItem eventKey={4} href="#">
+                        <span onClick={this.mkdir} >
+                            <i style={{fontSize: 8,verticalAlign:"top"}} className="glyphicon glyphicon-plus"></i>
+                            <span className="glyphicon glyphicon-folder-open"/>
+                        </span>
+                    </NavItem>
+                    <NavItem eventKey={3} href="#">
+                        <OverlayTrigger placement="bottom" overlay={tooltipupload}>
+                        <span  onClick={this.onUpload} className="glyphicon glyphicon-upload"/>
+                        </OverlayTrigger>
+                    </NavItem>
+                    <NavItem eventKey={5} href="#">   
+                        <span onClick={this.alternateView} ref="altViewSpan" className={className} />
+                    </NavItem>
+                    <NavItem eventKey={6} href="#">
+                        <span onClick={this.rootclick} className="glyphicon glyphicon-chevron-right"/>
+                        {pathshow}
+                    </NavItem>
+                  </Nav>
+                </Navbar.Collapse>
+              </Navbar>
+            <input type="file" id="uploadInput" onChange={this.uploadFile} style={{display:this.state.displayUpload}} />
+            </div>
+        );
+        const ace=(
+            <div>
+                {this.state.openfilepath}
+                <Button disabled={!this.state.filechange} 
+                    onClick={this.savefilecontent}>
+                    save
+                </Button>
+                <Button disabled={!this.state.filechange} onClick={()=> {this.refs.editor.editor.undo()}}> 
+                    <span  style={{
+                        transform:"scaleX(-1)",
+                        filter:"FlipH"}}
+                        className="glyphicon glyphicon-share-alt"
+                     />
+                </Button>
+                <Button disabled={!this.state.filechange} onClick={()=> {this.refs.editor.editor.redo()}}> 
+                    <span className="glyphicon glyphicon-share-alt"  />
+                </Button>
+                <Button  onClick={()=> {
+                    console.log(this.refs.editor);
+                    this.refs.editor.editor.showSettingsMenu();
+                }}> 
+                    settings
+                </Button>
+                <input
+                value={this.state.filecontent}
+                onChange={this.onChange}
+                name="UNIQUE_ID_OF_DIV"
+                editorProps={{$blockScrolling: true}}
+                />
+            </div>
+        );
+        let dircontent;
+        if (this.state.gridView)
+        {
+            dircontent=(
+                <div  style={{display : "inline"}}>
+                {files}
+                </div>
+            );
+        }
+        else{
+            dircontent=(
+                <table className="table table-responsive table-striped table-hover">
+                  <thead><tr>
+                  <th><button onClick={this.pathSort} className="btn btn-default"><span className="glyphicon glyphicon-sort"/>名称</button></th>
+                  <th><button onClick={this.sizeSort} className="btn btn-default"><span className="glyphicon glyphicon-sort"/>大小</button></th>
+                  <th><button onClick={this.timeSort} className="btn btn-default"><span className="glyphicon glyphicon-sort"/>修改日期</button></th>
+                  </tr></thead>
+                  <tbody>
+                  {files}
+                  </tbody>
+                </table>
+            );
+        }
+        return (
+                <div>
+   
+                    <div style={{width:"100%",
+                            backgroundColor:"#888", 
+                            maxHeight:"300px",
+                            overflow:"scroll"}}>
+                        {toolbar}
+                        {dircontent}
+                    </div>
+                    {ace}
+                </div>
+        );
+    }
 }
-ReactDOM.render(<DlgFolder2 />, document.getElementById('app'));
+ReactDOM.render(<Browser />, document.getElementById('app'));
 
