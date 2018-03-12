@@ -2916,7 +2916,7 @@ class App extends React.Component {
     // socket.on("connect",()=>{
     //   this.setState({connect_error:false});
     // })
-    parser.on('data', this.log);
+    parser.on('data', this.tp_data);
     this.load_data();
     setTimeout(this.timer,2000);
   }
@@ -2924,7 +2924,7 @@ class App extends React.Component {
     this.setState({lc:adlink.getchanelVolt(0),ls:adlink.getchanelVolt(0),hc:adlink.getchanelVolt(1)});
     setTimeout(this.timer,2000);
   }
-  log=(data)=>{
+  tp_data=(data)=>{
     //console.log(data);
     if(data!=this.state.tp_str){
         this.setState({tp_str:data});
@@ -3103,7 +3103,6 @@ class App extends React.Component {
         win.loadURL(modalPath)
         win.show()
   }
-<<<<<<< HEAD
   sampleClick=()=>{
 
   }
@@ -3152,7 +3151,6 @@ class App extends React.Component {
         <td>{contact.Area01}</td>
         <td>{contact.Content02}</td>
         <td>{contact.Area02}</td>
-        </td>
       </tr>
     ));
     var hasprev=true;
