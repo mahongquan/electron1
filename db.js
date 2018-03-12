@@ -1,7 +1,8 @@
 console.log("load");
 const path = require("path");
-var a = require(path.resolve('hello_nodegyp/build/Release/hello.node'));
-console.log(a);
+var addon = require(path.resolve('hello_nodegyp/build/Release/hello.node'));
+const adlink = new addon.MyObject(10);
+adlink.link();
 
 var sqlite3 = require('sqlite3').verbose();
 var db = new sqlite3.Database('./data.db');

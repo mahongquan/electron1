@@ -1,3 +1,48 @@
+function str_repeat(i, m) {
+    for (var o = []; m > 0; o[--m] = i);
+    return o.join('');
+}
+function sprintf() {
+    var i = 0, a, f = arguments[i++], o = [], m, p, c, x, s = '';
+    while (f) {
+        if (m = /^[^\x25]+/.exec(f)) {
+            o.push(m[0]);
+        }
+        else if (m = /^\x25{2}/.exec(f)) {
+            o.push('%');
+        }
+        else if (m = /^\x25(?:(\d+)\$)?(\+)?(0|'[^$])?(-)?(\d+)?(?:\.(\d+))?([b-fosuxX])/.exec(f)) {
+            if (((a = arguments[m[1] || i++]) == null) || (a == undefined)) {
+                throw('Too few arguments.');
+            }
+            if (/[^s]/.test(m[7]) && (typeof(a) != 'number')) {
+                throw('Expecting number but found ' + typeof(a));
+            }
+            switch (m[7]) {
+                case 'b': a = a.toString(2); break;
+                case 'c': a = String.fromCharCode(a); break;
+                case 'd': a = parseInt(a); break;
+                case 'e': a = m[6] ? a.toExponential(m[6]) : a.toExponential(); break;
+                case 'f': a = m[6] ? parseFloat(a).toFixed(m[6]) : parseFloat(a); break;
+                case 'o': a = a.toString(8); break;
+                case 's': a = ((a = String(a)) && m[6] ? a.substring(0, m[6]) : a); break;
+                case 'u': a = Math.abs(a); break;
+                case 'x': a = a.toString(16); break;
+                case 'X': a = a.toString(16).toUpperCase(); break;
+            }
+            a = (/[def]/.test(m[7]) && m[2] && a >= 0 ? '+'+ a : a);
+            c = m[3] ? m[3] == '0' ? '0' : m[3].charAt(1) : ' ';
+            x = m[5] - String(a).length - s.length;
+            p = m[5] ? str_repeat(c, x) : '';
+            o.push(s + (m[4] ? a + p : p + a));
+        }
+        else {
+            throw('Huh ?!');
+        }
+        f = f.substring(m[0].length);
+    }
+    return o.join('');
+}
 var SerialPort = require("serialport");
 const Readline = SerialPort.parsers.Readline;
 var port = new SerialPort("COM1", {
@@ -97,13 +142,7 @@ class File extends React.Component {
             var glyphClass = this.glyphClass();
             return (<tr id={this.props.id} ref={this.props.path}>
                             <td>
-                            <ContextMenuTrigger id={""+this.props.id}>
                             <a onClick={this.props.onClick}><span style={{fontSize:"1.5em", paddingRight:"10px"}} className={glyphClass}/>{this.props.name}</a>
-                            </ContextMenuTrigger>
-                            <ContextMenu id={""+this.props.id}>
-                                <MenuItem data={{a:1}} onClick={this.onRemove}>删除</MenuItem>
-                                <MenuItem data={{a:2}} onClick={this.onRename}>重命名</MenuItem>
-                              </ContextMenu>
                             </td>
                             <td>{File.sizeString(this.props.size)}</td>
                             <td>{dateString}</td>
@@ -113,15 +152,9 @@ class File extends React.Component {
             var glyphClass = this.glyphClass();
             return (
                 <div ref={this.props.path} >
-                    <ContextMenuTrigger id={""+this.props.id}>
                         <a id={this.props.id} onClick={this.props.onClick}>
                         <span style={{fontSize:"3.5em"}} className={glyphClass}/>
                         </a>
-                    </ContextMenuTrigger>
-                                            <ContextMenu id={""+this.props.id}>
-                        <MenuItem data={{a:1}} onClick={this.onRemove}>remove</MenuItem>
-                        <MenuItem data={{a:2}} onClick={this.onRename}>rename</MenuItem>
-                    </ContextMenu>
 
                     <h4 >{this.props.name}</h4>
 
@@ -2871,7 +2904,8 @@ class App extends React.Component {
     connect_error:false,
     tp_str:"",
     begin_date:m1.format("YYYY-MM-DD"),
-    end_date:m2.format("YYYY-MM-DD")
+    end_date:m2.format("YYYY-MM-DD"),
+    lc:0,ls:0,hc:0,
   }
 }
   componentDidMount=() => {
@@ -2883,6 +2917,11 @@ class App extends React.Component {
     // })
     parser.on('data', this.log);
     this.load_data();
+    setTimeout(this.timer,2000);
+  }
+  timer=()=>{
+    this.setState({lc:adlink.getchanelVolt(0),ls:adlink.getchanelVolt(0),hc:adlink.getchanelVolt(1)});
+    setTimeout(this.timer,2000);
   }
   log=(data)=>{
     //console.log(data);
@@ -3140,6 +3179,7 @@ class App extends React.Component {
     return (
     <div id="todoapp" className="table-responsive">
     <div>天平显示：{this.state.tp_str}</div>
+    <div><font face="Consolas">lc：{sprintf("%2.3f",this.state.lc)}ls：{sprintf("%2.3f",this.state.ls)}hc：{sprintf("%2.3f",this.state.hc)}</font></div>
     <div align="center" style={{display:this.state.connect_error?"":"none",textAlign: "center",color:"red"}} >!!!!!!!!!!连接错误!!!!!!!</div>
     <ContactEdit2New ref="contactedit" parent={this}   index={this.state.currentIndex} title="编辑"  />
     <DlgItems ref="dlgitems" />
