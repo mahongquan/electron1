@@ -1,4 +1,5 @@
 node_modules
+<<<<<<< HEAD
 deps
 *.map
 obj
@@ -7,3 +8,6 @@ obj
 *.lib
 *.node
 
+=======
+media
+>>>>>>> refs/remotes/origin/master

@@ -59,6 +59,7 @@ var port = new SerialPort("COM1", {
 //   // });
 // });
 const parser = port.pipe(new Readline({ delimiter: '\r\n' }));
+
 var {Table,Modal,Navbar,Nav,NavItem,DropdownButton,MenuItem}=ReactBootstrap;
 var update=newContext();
 var DateTime=Datetime;
@@ -3102,6 +3103,7 @@ class App extends React.Component {
         win.loadURL(modalPath)
         win.show()
   }
+<<<<<<< HEAD
   sampleClick=()=>{
 
   }
@@ -3150,6 +3152,7 @@ class App extends React.Component {
         <td>{contact.Area01}</td>
         <td>{contact.Content02}</td>
         <td>{contact.Area02}</td>
+        </td>
       </tr>
     ));
     var hasprev=true;
