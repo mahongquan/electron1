@@ -1,13 +1,1 @@
 node_modules
-<<<<<<< HEAD
-deps
-*.map
-obj
-*.exp
-*.pdb
-*.lib
-*.node
-
-=======
-media
->>>>>>> refs/remotes/origin/master

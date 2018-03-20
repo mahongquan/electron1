@@ -1,13 +1,69 @@
 console.log("load");
-const path = require("path");
-var addon = require(path.resolve('hello_nodegyp/build/Release/hello.node'));
-const adlink = new addon.MyObject(10);
-adlink.link();
 var sqlite3 = require('sqlite3').verbose();
-var db = new sqlite3.Database('data.db');
+var db = new sqlite3.Database('./data.db');
+const path = require('path')
 const {shell} = require('electron');
 const fs = require('fs');
+var app_root=path.resolve(".");
+//var  app_root=path.normalize(".")
+//console.log(app_root)
+function toPath(p){
+    var stat=fs.statSync(p);
+    return {"path": path.relative(app_root,p),
+            "name": path.basename(p),
+            "time": stat.mtimeMs,
+            "isdir": stat.isDirectory(),
+            "size":stat.size};
+}
+//console.log(toPath("run.bat"))
+//console.log(toPath("static"))
+function toLocalPath(path1){
+    var fsPath = path.resolve(app_root, path1);
+    console.log(fsPath);
+    //if(os.path.commonprefix([app_root, fsPath]) != app_root){
+    //    raise Exception("Unsafe path "+ fsPath+" is not a  sub-path  of root "+ app_root)
+    //}
+    return fsPath;
+}
+//toLocalPath("abc")
+function toWebPath(path){
+     return "/static/"+path;
+}
+function children(path1){
+    console.info(path1);
+    var p = toLocalPath(path1);
+    if (fs.existsSync(p)){
 
+    }
+    else{
+        p= toLocalPath(".");
+    }
+    var children = fs.readdirSync(p);
+    var children_stats=children.map((one, idx) =>{
+        var p1=p+"/"+one;
+        return toPath(p1);
+    });
+    dic={"path": p,"children": children_stats};
+    return dic;
+}
+function parent(path1){
+    let parent1;
+  if(path1 === app_root){
+      parent1 = path1;
+    }
+  else{
+      parent1 = path.dirname(path1);
+    }
+  var dic=toPath(parent1);
+  return dic;
+}
+//console.log(parent("."))
+function content(path1){
+  var p = toLocalPath(path1);
+  var r=fs.readFileSync(p);
+  console.log(r);
+  return r;
+}
 function myDateStr(date) {
     var year = date.getFullYear();
     var month = date.getMonth() + 1;
@@ -56,10 +112,10 @@ var socket={
       callback(parent(data.path));
     }
     else if (url=="/get/Contact"){
-        var where=" where 2>1"
-        if (data.search)
+      	var where=" where 2>1"
+      	if (data.search)
         {
-          where+=" and  SampleName like '%"+data.search+"%'";
+      		where+=" and  SampleName like '%"+data.search+"%'";
         }
         where+=" and  SampleId between '"+data.begin+"' and '"+data.end+"'";
         db.serialize(function(){
