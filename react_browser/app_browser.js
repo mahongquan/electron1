@@ -1,6 +1,4 @@
 var {Button,Overlay,OverlayTrigger,Tooltip,Table,Modal,Navbar,Nav,NavItem,DropdownButton,MenuItem}=ReactBootstrap;
-var update=newContext();
-var DateTime=Datetime;
 var host="";
 //var socket=io();
 var app = require('electron').remote; 
@@ -20,8 +18,59 @@ var openDialog = function(defaultpath,callback){
         callback(res[0]) //我这个是打开单个文件的
     })
 }
-var isEqual=_.isEqual;// from 'lodash/isEqual';
-var find=_.find;// import find from 'lodash/find';
+var {Editor,EditorState, RichUtils}=Draft;
+      class MyEditor extends React.Component {
+        constructor(props) {
+          super(props);
+          this.state = {editorState: EditorState.createEmpty()};
+          this.onChange = (editorState) => this.setState({editorState});
+          this.logState = () => console.log(this.state.editorState.toJS());
+          this.setDomEditorRef = ref => this.domEditor = ref;
+        }
+                
+        componentDidMount(){
+          this.domEditor.focus()
+        }
+        
+        render() {
+          return (
+            <div style={styles.root}>
+              <div style={styles.editor} onClick={this.focus}>
+                <Editor
+                  editorState={this.state.editorState}
+                  onChange={this.onChange}
+                  placeholder="Enter some text..."
+                  ref={this.setDomEditorRef}
+                />
+              </div>
+              <input
+                onClick={this.logState}
+                style={styles.button}
+                type="button"
+                value="Log State"
+              />
+            </div>
+          );
+        }
+      }
+      const styles = {
+        root: {
+          fontFamily: '\'Helvetica\', sans-serif',
+          padding: 20,
+          width: 600,
+        },
+        editor: {
+          border: '1px solid #ccc',
+          cursor: 'text',
+          minHeight: 80,
+          padding: 10,
+        },
+        button: {
+          marginTop: 10,
+          textAlign: 'center',
+        },
+      };
+
 //var {ContextMenuTrigger,ContextMenu}=ReactContextMenu;
 //Browser///////////////////////////////////////////////////////
 function buildUploadUrl(path, name) {
@@ -529,12 +578,7 @@ class  Browser extends React.Component {
                 }}> 
                     settings
                 </Button>
-                <input
-                value={this.state.filecontent}
-                onChange={this.onChange}
-                name="UNIQUE_ID_OF_DIV"
-                editorProps={{$blockScrolling: true}}
-                />
+                <MyEditor />
             </div>
         );
         let dircontent;
