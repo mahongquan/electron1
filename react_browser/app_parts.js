@@ -1,4 +1,19 @@
-import {Navbar,Nav,NavItem,MenuItem,DropdownButton,Tooltip,Overlay} from "react-bootstrap";
+var SerialPort = require("serialport");
+const Readline = SerialPort.parsers.Readline;
+var port = new SerialPort("COM1", {
+    baudRate: 1200,
+    dataBits: 7,
+    parity: 'odd',
+    stopBits: 1,
+  });
+// port.on('open',function() {
+//   console.log('Port open');
+//   // port.write("ls\r\n", function(err, results) {
+//   //   console.log('err ' + err);
+//   //   console.log('results ' + results);
+//   // });
+// });
+const parser = port.pipe(new Readline({ delimiter: '\r\n' }));
 var update=newContext();
 var DateTime=Datetime;
 var host="";
@@ -211,10 +226,10 @@ class  Browser extends React.Component {
 
     uploadFile=()=>{
         var path = this.currentPath();
-        var readFile = evt.target.files[0];
-        var name = readFile.name;
-        console.log(readFile);
-        socket.emit("/fs/upload",{},()=>{});
+        // var readFile = evt.target.files[0];
+        // var name = readFile.name;
+        // console.log(readFile);
+        // socket.emit("/fs/upload",{},()=>{});
         // var formData = new FormData();
         // formData.append("file", readFile, name);
 
@@ -406,7 +421,7 @@ class DlgFolder2 extends React.Component{
   }
   render=()=>{
     return (
-        <button onClick={this.open}>{this.props.title}
+        <button onClick={this.open}>文件浏览
         <Modal show={this.state.showModal} onHide={this.close}  dialogClassName="custom-modal">
           <Modal.Header closeButton>
             <Modal.Title>文件浏览</Modal.Title>
@@ -1997,7 +2012,7 @@ class DlgPacks extends React.Component {
           total:contacts2.total,
           start:this.mystate.start
         });
-        this.mystate.total=contacts2.total;
+        //this.mystate.total=contacts2.total;
     });
   }
   handlePrev = (e) => {
@@ -2007,9 +2022,9 @@ class DlgPacks extends React.Component {
     this.loaddata();
   };
   handleNext = (e) => {
-    this.mystate.start=this.mystate.start+this.mystate.limit;
-    if(this.mystate.start>this.mystate.total-this.mystate.limit) 
-        this.mystate.start=this.mystate.total-this.mystate.limit;//total >limit
+    this.mystate.start=this.mystate.start+this.state.limit;
+    if(this.mystate.start>this.state.total-this.state.limit) 
+        this.mystate.start=this.state.total-this.state.limit;//total >limit
     if(this.mystate.start<0)
     {
       this.mystate.start=0;
@@ -2018,8 +2033,8 @@ class DlgPacks extends React.Component {
   };
   jump=()=>{
     this.mystate.start=parseInt(this.state.start_input,10)-1;
-    if(this.mystate.start>this.mystate.total-this.mystate.limit) 
-        this.mystate.start=this.mystate.total-this.mystate.limit;//total >limit
+    if(this.mystate.start>this.state.total-this.state.limit) 
+        this.mystate.start=this.state.total-this.state.limit;//total >limit
     if(this.mystate.start<0)
     {
       this.mystate.start=0;
@@ -2386,7 +2401,9 @@ let styles = {
   }
 }
 class ContactEdit2New  extends React.Component{
-  state={ 
+    constructor(){
+      super();
+      this.state={ 
       showModal: false,
       contact:{
         yujifahuo_date:moment(),
@@ -2396,7 +2413,7 @@ class ContactEdit2New  extends React.Component{
       bg:{},
       date_open:false,
   }
-
+}
   close=()=>{
     this.setState({ showModal: false });
   }
@@ -2832,13 +2849,16 @@ class ContactEdit2New  extends React.Component{
 class App extends React.Component {
   mystate = {
     start:0,
-    limit:10,
-    total:0,
-    baoxiang:"",
-    logined: false,
-    search:""
   }
-   state = {
+  constructor(){
+    super();
+   var m1=moment();
+   m1.subtract(1,"years");
+   var m2=moment();
+   m2.add(1,"days");
+   this.state = {
+    logined:false,
+    limit:10,
     contacts: [],
     user: "AnonymousUser",
     start:0,
@@ -2848,7 +2868,11 @@ class App extends React.Component {
     start_input:1,
     currentIndex:null,
     connect_error:false,
+    tp_str:"",
+    begin_date:m1.format("YYYY-MM-DD"),
+    end_date:m2.format("YYYY-MM-DD")
   }
+}
   componentDidMount=() => {
     // socket.on("connect_error",()=>{
     //   this.setState({connect_error:true});
@@ -2856,21 +2880,29 @@ class App extends React.Component {
     // socket.on("connect",()=>{
     //   this.setState({connect_error:false});
     // })
+    parser.on('data', this.log);
     this.load_data();
+  }
+  log=(data)=>{
+    //console.log(data);
+    if(data!=this.state.tp_str){
+        this.setState({tp_str:data});
+    }
   }
   load_data=()=>{
     socket.emit("/get/Contact",
       { start:this.mystate.start,
-        limit:this.mystate.limit,
-        search:this.mystate.search,
-        baoxiang:this.mystate.baoxiang,
+        limit:this.state.limit,
+        search:this.state.search,
+        begin:this.state.begin_date,
+        end:this.state.end_date,
       }, 
       (contacts) => {
         var user=contacts.user;
         if(user===undefined){
           user="AnonymousUser"
         }
-        this.mystate.total=contacts.total;//because async ,mystate set must before state;
+        //this.mystate.total=contacts.total;//because async ,mystate set must before state;
         this.setState({
           contacts: contacts.data, //.slice(0, MATCHING_ITEM_LIMIT),
           user: user,
@@ -2915,11 +2947,10 @@ class App extends React.Component {
     // });
   };
   handleSearchChange = (e) => {
-    this.mystate.search=e.target.value;
-    this.setState({search:this.mystate.search});
+    this.setState({search:e.target.value});
   };
   handlePrev = (e) => {
-    this.mystate.start=this.mystate.start-this.mystate.limit;
+    this.mystate.start=this.mystate.start-this.state.limit;
     if(this.mystate.start<0) {this.mystate.start=0;}
     this.load_data();
   };
@@ -2929,8 +2960,8 @@ class App extends React.Component {
   };
   jump=()=>{
     this.mystate.start=parseInt(this.state.start_input,10)-1;
-    if(this.mystate.start>this.mystate.total-this.mystate.limit) 
-        this.mystate.start=this.mystate.total-this.mystate.limit;//total >limit
+    if(this.mystate.start>this.state.total-this.state.limit) 
+        this.mystate.start=this.state.total-this.state.limit;//total >limit
     if(this.mystate.start<0)
     {
       this.mystate.start=0;
@@ -2943,9 +2974,9 @@ class App extends React.Component {
 
 
   handleNext = (e) => {
-    this.mystate.start=this.mystate.start+this.mystate.limit;
-    if(this.mystate.start>this.mystate.total-this.mystate.limit) 
-        this.mystate.start=this.mystate.total-this.mystate.limit;//total >limit
+    this.mystate.start=this.state.start+this.state.limit;
+    if(this.mystate.start>this.state.total-this.state.limit) 
+        this.mystate.start=this.state.total-this.state.limit;//total >limit
     if(this.mystate.start<0)
     {
       this.mystate.start=0;
@@ -2999,6 +3030,10 @@ class App extends React.Component {
      //this.refs.dlgfolder.open(contactid); 
      socket.emit("/folder",{yiqibh:contactid},()=>{});
   }
+  opendlgfolder2=(contactid)=>{
+     this.refs.dlgfolder2.open(contactid); 
+     //socket.emit("/folder",{yiqibh:contactid},()=>{});
+  }
   opendlgcheck=(contactid,yiqibh)=>{
    this.refs.dlgcheck.open(contactid,yiqibh); 
   }
@@ -3027,44 +3062,54 @@ class App extends React.Component {
         win.loadURL(modalPath)
         win.show()
   }
-//   const BrowserWindow = require('electron').remote.BrowserWindow
-// const path = require('path')
+  sampleClick=()=>{
 
-// const newWindowBtn = document.getElementById('new-window')
-
-// newWindowBtn.addEventListener('click', function (event) {
-//   const modalPath = path.join('file://', __dirname, '../../sections/windows/modal.html')
-//   let win = new BrowserWindow({ width: 400, height: 320 })
-//   win.on('close', function () { win = null })
-//   win.loadURL(modalPath)
-//   win.show()
-// })
+  }
+   end_date_change=(value)=>{
+    //this.state.yujifahuo_date=value;
+    var t=null;
+    if (typeof value==="string")
+    {
+      t=value;
+    }
+    else{
+      t=value.format("YYYY-MM-DD");
+    }
+    this.setState({end_date:t});
+  }
+  begin_date_change=(value)=>{
+    //this.state.yujifahuo_date=value;
+    var t=null;
+    if (typeof value==="string")
+    {
+      t=value;
+    }
+    else{
+      t=value.format("YYYY-MM-DD");
+    }
+    this.setState({begin_date:t});
+  }
   render() {
     console.log("render=========================");
     const contactRows = this.state.contacts.map((contact, idx) => (
       <tr key={idx} >
-        <td>{contact.id}</td>
-        <td>{contact.yonghu}</td>
-        <td>{contact.addr}</td>
-        <td>{contact.channels}</td>
-        <td>{contact.yiqixinghao}</td>
-        <td>
-          <a onClick={()=>this.handleEdit(idx)}>{contact.yiqibh}</a>
-           <DropdownButton title="" id="id_dropdown3">
+        <td>{contact.SampleId}</td>
+        <td><a onClick={this.sampleClick}>{contact.SampleName}</a>
+            <DropdownButton title="" id="id_dropdown3">
             <MenuItem onSelect={() => this.onDetailClick(contact.id)}>详细</MenuItem>
             <MenuItem onSelect={()=>this.opendlgurl("/rest/updateMethod",this,idx,{id:contact.id})}>更新方法</MenuItem>
             <MenuItem onSelect={()=>this.opendlgwait(contact.id)}>全部文件</MenuItem>
             <MenuItem onSelect={()=>this.opendlgcheck(contact.id,contact.yiqibh)}>核对备料计划</MenuItem>
             <MenuItem onSelect={()=>this.opendlgfolder(contact.yiqibh)}>资料文件夹</MenuItem>
-            
           </DropdownButton>
         </td>
-        <td>{contact.baoxiang}</td>
-        <td>{contact.shenhe}</td>
-        <td>{contact.yujifahuo_date}</td>
-        <td>{contact.tiaoshi_date}</td>
-        <td>{contact.hetongbh}</td>
-        <td>{contact.method}</td>
+        <td>{contact.SampleNum}</td>
+        <td>{contact.SampleWeight}</td>
+        <td>{contact.FluxWeight}</td>
+        <td>{contact.Content01}</td>
+        <td>{contact.Area01}</td>
+        <td>{contact.Content02}</td>
+        <td>{contact.Area02}</td>
       </tr>
     ));
     var hasprev=true;
@@ -3093,6 +3138,7 @@ class App extends React.Component {
     }
     return (
     <div id="todoapp" className="table-responsive">
+    <div>天平显示：{this.state.tp_str}</div>
     <div align="center" style={{display:this.state.connect_error?"":"none",textAlign: "center",color:"red"}} >!!!!!!!!!!连接错误!!!!!!!</div>
     <ContactEdit2New ref="contactedit" parent={this}   index={this.state.currentIndex} title="编辑"  />
     <DlgItems ref="dlgitems" />
@@ -3102,6 +3148,7 @@ class App extends React.Component {
     <DlgImport ref="dlgimport" />
     <DlgCheck ref="dlgcheck" />
     <DlgFolder ref="dlgfolder" />
+    <DlgFolder2 ref="dlgfolder2" />
     <DlgWait ref="dlgwait" />
     <DlgUrl ref="dlgurl" />
     <Navbar className="navbar-inverse">
@@ -3122,25 +3169,31 @@ class App extends React.Component {
     <tbody>
     <tr>
        <td>
-       {
-         // <DropdownButton title={this.state.user} id="id_dropdown1">
-         //    <li hidden={this.state.user!=="AnonymousUser"}>
-         //      <ExampleModal onLoginSubmit={this.onLoginSubmit} title="登录" />
-         //    </li>
-         //    <li  hidden={this.state.user==="AnonymousUser"} >
-         //      <a onClick={this.handleLogout}>注销</a>
-         //    </li>
-         // </DropdownButton>
-       }
+       <DateTime  ref="datetime1" timeFormat={false} 
+                    inputProps={
+                      {"style":
+                        {"backgroundColor":"#0A0"}
+                      }
+                    } 
+                    id="begin_date" name="begin_date"  value={this.state.begin_date} onChange={this.begin_date_change} />
+      </td>
+      <td>
+      <DateTime  ref="datetime2" timeFormat={false} 
+                    inputProps={
+                      {"style":
+                        {"backgroundColor":"#0A0"}
+                      }
+                    } 
+                    id="end_date" name="end_date"  value={this.state.end_date} onChange={this.end_date_change} />
       </td>
     <td>
-          <input type="text" value={this.state.search}  placeholder="合同 or 仪器编号" onChange={this.handleSearchChange} />
+          <input type="text" value={this.state.search}  placeholder="样品名称" onChange={this.handleSearchChange} />
           <button id="id_bt_search" className="btm btn-info" onClick={this.search}>搜索
           <span className="glyphicon glyphicon-search" aria-hidden="true"></span>
           </button>
     </td>
     <td>
-         <button className="btn btn-primary" onClick={()=>this.handleEdit(null)}>新仪器</button>
+         
     </td>
      <td>
    <button className="btn btn-info" onClick={this.openDlgImport}>导入标样</button>
@@ -3156,12 +3209,19 @@ class App extends React.Component {
   </tr>
   </tbody>
   </table>
-  <table className="table-bordered"><thead><tr><th>ID</th><th>用户单位</th><th>客户地址</th><th>通道配置</th><th>仪器型号</th><th>仪器编号</th><th>包箱</th><th>审核</th>
-  <th>入库时间</th><th>调试时间</th><th>合同编号</th><th>方法</th></tr></thead><tbody id="contact-list">{contactRows}</tbody>
+  <table className="table-bordered"><thead><tr>
+  <th>ID</th>
+  <th>名称</th>
+  <th>序号</th>
+  <th>重量</th><th>助熔剂质量</th>
+  <th>C</th><th>C_Area</th>
+  <th>S</th><th>S_Area</th>
+  </tr></thead><tbody id="contact-list">{contactRows}</tbody>
   </table>{prev}
   <label id="page">{this.state.start+1}../{this.state.total}</label>{next}
       <input maxLength="6" size="6" onChange={this.handlePageChange} value={this.state.start_input} />
       <button id="page_go"  className="btn btn-info" onClick={this.jump}>跳转</button>
+      <div style={{minHeight:"200px"}}></div>
   </div>
     );
   }
