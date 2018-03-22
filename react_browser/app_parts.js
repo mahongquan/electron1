@@ -1,4 +1,4 @@
-var {Table,Modal,Navbar,Nav,NavItem,DropdownButton,MenuItem}=ReactBootstrap;
+import {Navbar,Nav,NavItem,MenuItem,DropdownButton,Tooltip,Overlay} from "react-bootstrap";
 var update=newContext();
 var DateTime=Datetime;
 var host="";
